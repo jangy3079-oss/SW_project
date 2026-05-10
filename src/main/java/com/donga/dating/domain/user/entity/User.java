@@ -68,7 +68,7 @@ public class User {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isActive = true;
+    private Boolean isActive = true;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -87,7 +87,7 @@ public class User {
     }
 
     public void deactivate() {
-        this.isActive = false;
+        this.isActive = Boolean.FALSE;
     }
 
     // ── Enum ─────────────────────────────────────

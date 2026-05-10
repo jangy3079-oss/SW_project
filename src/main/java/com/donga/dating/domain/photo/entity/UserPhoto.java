@@ -37,7 +37,7 @@ public class UserPhoto {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isPrimary = false;
+    private Boolean isPrimary = false;
 
     @Column(nullable = false)
     @Builder.Default
@@ -49,12 +49,12 @@ public class UserPhoto {
     // ── 비즈니스 메서드 ──────────────────────────
 
     public void markAsPrimary() {
-        this.isPrimary = true;
+        this.isPrimary = Boolean.TRUE;
         this.photoOrder = 0;
     }
 
     public void unmarkPrimary() {
-        this.isPrimary = false;
+        this.isPrimary = Boolean.FALSE;
     }
 
     public void updateOrder(byte order) {

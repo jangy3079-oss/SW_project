@@ -1,0 +1,22 @@
+### 로그인 요청
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser1@donga.ac.kr",
+  "password": "1234"
+}
+
+### Access Token으로 인증된 API 호출 예시
+GET http://localhost:8080/api/users/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlcjFAZG9uZ2EuYWMua3IiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3ODQ4MzIzOCwiZXhwIjoxNzc4NDg0MTM4fQ.sb9Ewp28XQUOUP2vvaYyE2WctNDikelWjG7m7hgWWpQ
+
+
+### Refresh Token으로 Access Token 재발급
+POST http://localhost:8080/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlcjFAZG9uZ2EuYWMua3IiLCJpYXQiOjE3Nzg0ODE1NzUsImV4cCI6MTc3OTY5MTE3NX0.zJqKXWT0jnP-X85grIEVYYLHHw0d_mRNo0V-xYUBCWs"
+}
+

@@ -1,11 +1,13 @@
 package com.donga.dating.global.exception;
 
+import com.donga.dating.auth.exception.AuthException;
 import com.donga.dating.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.http.HttpStatus;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,4 +35,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError()
                 .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
     }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<?> handleAuthException(AuthException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                new ErrorResponse(false, ex.getMessage(), null)
+        );
+    }
+
+    // 응답 DTO 임시 검증용 포맷 맞춰 수정예정
+    public static class ErrorResponse {
+        public boolean success;
+        public String message;
+        public Object data;
+
+        public ErrorResponse(boolean success, String message, Object data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+    }
+
 }

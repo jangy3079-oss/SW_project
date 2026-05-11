@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
 
-        e.printStackTrace();
+
 
         return ResponseEntity.internalServerError()
                 .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));

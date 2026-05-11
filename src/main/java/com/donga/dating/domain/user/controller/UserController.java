@@ -27,13 +27,6 @@ public class UserController {
             @RequestBody RegisterRequest request
     ) throws Exception{
 
-        System.out.println(new ObjectMapper().writeValueAsString(request));
-
-        System.out.println("EMAIL: " + request.getEmail());
-        System.out.println("STUDENT_ID: " + request.getStudentId());
-        System.out.println(request);
-
-        System.out.println(request.toString());
         userService.register(request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

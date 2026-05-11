@@ -15,7 +15,10 @@ public enum ErrorCode {
     // 사용자
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
+    STUDENT_ID_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 학번입니다."),
     INVALID_DONGA_EMAIL(HttpStatus.BAD_REQUEST, "동아대학교 이메일(@donga.ac.kr)만 허용됩니다."),
+
+
 
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."),

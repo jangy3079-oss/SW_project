@@ -8,10 +8,18 @@ import com.donga.dating.global.exception.CustomException;
 import com.donga.dating.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
@@ -106,6 +114,35 @@ public class PhotoService {
         return photoRepository.findByUser_UserIdOrderByPhotoOrderAsc(userId);
     }
 
+    public UserPhoto getPhotoForView(Long userId, Long photoId) {
+        UserPhoto photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PHOTO_NOT_FOUND));
+
+        if (!photo.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        return photo;
+    }
+
+    public byte[] loadPhotoBytes(UserPhoto photo) {
+        try {
+            byte[] sourceBytes = Files.readAllBytes(Paths.get(photo.getFilePath()));
+            return addWatermarkIfPossible(sourceBytes);
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.FILE_SAVE_FAILED);
+        }
+    }
+
+    public MediaType resolveMediaType(UserPhoto photo) {
+        String ext = getExtension(photo.getOriginalName());
+        return switch (ext) {
+            case "jpg", "jpeg", "png" -> MediaType.IMAGE_JPEG;
+            case "webp" -> MediaType.valueOf("image/webp");
+            default -> MediaType.APPLICATION_OCTET_STREAM;
+        };
+    }
+
     // ── private ─────────────────────────────────
 
     private void validateFile(MultipartFile file) {
@@ -133,5 +170,44 @@ public class PhotoService {
             throw new CustomException(ErrorCode.FILE_SAVE_FAILED);
         }
         return savedName;
+    }
+
+    private byte[] addWatermarkIfPossible(byte[] sourceBytes) {
+        try {
+            BufferedImage image = ImageIO.read(new java.io.ByteArrayInputStream(sourceBytes));
+            if (image == null) {
+                return sourceBytes;
+            }
+
+            BufferedImage output = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics2D graphics = output.createGraphics();
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            graphics.drawImage(image, 0, 0, null);
+
+            String watermark = "SW PROJECT";
+            graphics.setFont(new Font("SansSerif", Font.BOLD, Math.max(18, image.getWidth() / 24)));
+            FontMetrics metrics = graphics.getFontMetrics();
+            int x = Math.max(12, image.getWidth() - metrics.stringWidth(watermark) - 16);
+            int y = Math.max(metrics.getHeight() + 12, image.getHeight() - 16);
+
+            graphics.setColor(new Color(0, 0, 0, 110));
+            graphics.drawString(watermark, x + 1, y + 1);
+            graphics.setColor(new Color(255, 255, 255, 180));
+            graphics.drawString(watermark, x, y);
+            graphics.dispose();
+
+            java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+            ImageIO.write(output, "jpg", outputStream);
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            return sourceBytes;
+        }
+    }
+
+    private String getExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
     }
 }

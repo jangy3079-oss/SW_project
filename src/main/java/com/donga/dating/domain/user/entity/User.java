@@ -78,6 +78,22 @@ public class User {
 
     // ── 비즈니스 메서드 ──────────────────────────
 
+    public void updateProfile(String name,
+                              Gender gender,
+                              LocalDate birthDate,
+                              String studentId,
+                              String department,
+                              Byte grade,
+                              String bio) {
+        this.name = name;
+        this.gender = gender;
+        this.birthDate = birthDate;
+        this.studentId = studentId;
+        this.department = department;
+        this.grade = grade;
+        this.bio = bio;
+    }
+
     public void updateBio(String bio) {
         this.bio = bio;
     }

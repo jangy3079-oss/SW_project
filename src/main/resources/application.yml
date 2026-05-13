@@ -1,9 +1,21 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/sw_project
+    url: jdbc:mysql://localhost:3306/donga_dating?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root          # TODO: 실제 DB 계정으로 변경
-    password: 1234      # TODO: 실제 DB 비밀번호로 변경
+    password: password      # TODO: 실제 DB 비밀번호로 변경
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: yourgmail@gmail.com
+    password: 앱비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   jpa:
     hibernate:

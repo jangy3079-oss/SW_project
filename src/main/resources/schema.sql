@@ -61,6 +61,20 @@ CREATE TABLE email_verifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────
+-- 2. 이메일 인증 토큰 (VerificationToken 엔티티 기반)
+-- ──────────────────────────────────────────
+CREATE TABLE verification_tokens (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    token VARCHAR(100) NOT NULL COMMENT 'UUID 인증 토큰',
+    expiry_date TIMESTAMP NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_token_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY uq_user (user_id),
+    INDEX idx_token (token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ──────────────────────────────────────────
 -- 3. 프로필 사진
 -- ──────────────────────────────────────────
 CREATE TABLE user_photos (

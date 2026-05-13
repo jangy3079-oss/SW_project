@@ -25,7 +25,7 @@ public class UserPhotoResponse {
                 .photoId(photo.getPhotoId())
                 .userId(photo.getUser().getUserId())
                 .fileName(photo.getFileName())
-                .viewUrl("/api/users/" + photo.getUser().getUserId() + "/photos/" + photo.getPhotoId() + "/view")
+                .viewUrl("/uploads/" + photo.getFileName())
                 .originalName(photo.getOriginalName())
                 .fileSize(photo.getFileSize())
                 .isPrimary(photo.getIsPrimary())

@@ -45,8 +45,9 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────
--- 2. 이메일 인증 (로그인 담당자용)
+-- 2. 이메일 인증 (로그인 담당자용) (사용 x
 -- ──────────────────────────────────────────
+/*
 CREATE TABLE email_verifications (
     verification_id BIGINT       NOT NULL AUTO_INCREMENT,
     email           VARCHAR(100) NOT NULL,
@@ -59,6 +60,7 @@ CREATE TABLE email_verifications (
     INDEX idx_token (token),
     INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+*/
 
 -- ──────────────────────────────────────────
 -- 2. 이메일 인증 토큰 (VerificationToken 엔티티 기반)

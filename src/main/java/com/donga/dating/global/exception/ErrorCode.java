@@ -17,7 +17,9 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
     STUDENT_ID_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 학번입니다."),
     INVALID_DONGA_EMAIL(HttpStatus.BAD_REQUEST, "동아대학교 이메일(@donga.ac.kr)만 허용됩니다."),
-
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "잘못된 토큰입니다."),
+    TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "토큰이 만료되었습니다."),
+    ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증된 계정입니다."),
 
 
     // 사진

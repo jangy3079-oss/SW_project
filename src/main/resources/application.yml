@@ -5,6 +5,18 @@ spring:
     password: pskwi0375#     # TODO: 실제 DB 비밀번호로 변경
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: yourgmail@gmail.com
+    password: 앱비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   jpa:
     hibernate:
       ddl-auto: validate    # schema.sql 로 직접 관리 → validate
@@ -36,3 +48,5 @@ logging:
   level:
     com.donga.dating: DEBUG
     org.hibernate.SQL: DEBUG
+
+

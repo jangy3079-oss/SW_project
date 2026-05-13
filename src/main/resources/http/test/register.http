@@ -3,8 +3,8 @@ Content-Type: application/json
 
 {
   "email": "2242879@donga.ac.kr",
-  "password": "1234",
-  "name": "홍길동",
+  "password": "1235",
+  "name": "이길동",
   "studentId": "20260001",
   "department": "컴퓨터공학과",
   "grade": 3,

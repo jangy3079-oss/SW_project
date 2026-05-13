@@ -30,6 +30,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error("파일 크기가 너무 큽니다. (최대 10MB)"));
     }
 
+    /*
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
 
@@ -38,6 +39,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError()
                 .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
     }
+    // 개발용임시 끝나면 위에 걸로 사용하고 아래는 지울것
+    */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handleException(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse(false, e.getMessage(), null));
+    }
+
 
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<?> handleAuthException(AuthException ex) {
@@ -45,6 +54,7 @@ public class GlobalExceptionHandler {
                 new ErrorResponse(false, ex.getMessage(), null)
         );
     }
+
 
     // 응답 DTO 임시 검증용 포맷 맞춰 수정예정
     public static class ErrorResponse {

@@ -3,13 +3,13 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "testuser1@donga.ac.kr",
+  "email": "2242879@donga.ac.kr",
   "password": "1234"
 }
 
 ### Access Token으로 인증된 API 호출 예시
-GET http://localhost:8080/api/users/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlcjFAZG9uZ2EuYWMua3IiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3ODQ4MzIzOCwiZXhwIjoxNzc4NDg0MTM4fQ.sb9Ewp28XQUOUP2vvaYyE2WctNDikelWjG7m7hgWWpQ
+GET http://localhost:8080/api/users/2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzg2NjExMjAsImV4cCI6MTc3ODY2MjAyMH0.7XxsBt1dkiIhzw07RhwT9gBaqLAWgiv5KbEsh9SgGeM
 
 
 ### Refresh Token으로 Access Token 재발급

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>동아대 데이팅앱 — API 테스트</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    header h1 { font-size: 22px; color: #333; }
+    header p  { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* ── 탭 ── */
+    .tabs {
+      display: flex;
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+      border-bottom: 2px solid #eee;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 14px 0;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #aaa;
+      cursor: pointer;
+      transition: color .2s, border-bottom .2s;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { color: #ff6b9d; border-bottom: 3px solid #ff6b9d; }
+
+    /* ── 카드 ── */
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 0 0 12px 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── 폼 요소 ── */
+    label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; margin-top: 14px; }
+    label:first-child { margin-top: 0; }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus { border-color: #ff6b9d; }
+
+    /* ── 버튼 ── */
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px;
+      background: #ff6b9d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn:hover { background: #e55a8a; }
+    .btn.secondary {
+      background: #f0f2f5;
+      color: #555;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    .btn.secondary:hover { background: #e2e5ea; }
+
+    /* ── 응답창 ── */
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+    }
+    .result.ok  { background: #e8f8f0; color: #1a7a45; border: 1px solid #b2dfcb; }
+    .result.err { background: #fdecea; color: #b00020; border: 1px solid #f5c6c0; }
+
+    /* ── 토큰 표시 ── */
+    .token-box {
+      background: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 11px;
+      word-break: break-all;
+      color: #555;
+      margin-top: 12px;
+      display: none;
+    }
+    .token-box b { color: #333; display: block; margin-bottom: 4px; }
+
+    /* ── 섹션 구분 ── */
+    .divider {
+      text-align: center;
+      font-size: 12px;
+      color: #bbb;
+      margin: 20px 0 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #eee;
+    }
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+
+    .info-text { font-size: 12px; color: #999; margin-top: 8px; text-align: center; }
+
+    /* ── 배지 ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge.get  { background: #dbeafe; color: #1d4ed8; }
+    .badge.post { background: #dcfce7; color: #166534; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💕 동아대 데이팅앱</h1>
+  <p>API 테스트 화면 (개발용) · localhost:8080</p>
+</header>
+
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('register')">회원가입</button>
+  <button class="tab-btn" onclick="switchTab('verify')">이메일 인증</button>
+  <button class="tab-btn" onclick="switchTab('login')">로그인</button>
+  <button class="tab-btn" onclick="switchTab('me')">내 정보</button>
+</div>
+
+<div class="card">
+
+  <!-- ── 회원가입 패널 ── -->
+  <div id="panel-register" class="panel active">
+    <label>이메일 <span style="color:#aaa;font-size:11px">(@donga.ac.kr)</span></label>
+    <input id="reg-email" type="email" placeholder="2242879@donga.ac.kr" />
+
+    <label>비밀번호</label>
+    <input id="reg-pw" type="password" placeholder="비밀번호" />
+
+    <label>이름</label>
+    <input id="reg-name" type="text" placeholder="홍길동" />
+
+    <label>학번</label>
+    <input id="reg-sid" type="text" placeholder="20260001" />
+
+    <label>학과</label>
+    <input id="reg-dept" type="text" placeholder="컴퓨터공학과" />
+
+    <label>학년</label>
+    <select id="reg-grade">
+      <option value="1">1학년</option>
+      <option value="2">2학년</option>
+      <option value="3" selected>3학년</option>
+      <option value="4">4학년</option>
+    </select>
+
+    <label>생년월일</label>
+    <input id="reg-birth" type="date" value="2000-01-01" />
+
+    <label>성별</label>
+    <select id="reg-gender">
+      <option value="MALE">남성</option>
+      <option value="FEMALE">여성</option>
+    </select>
+
+    <button class="btn" onclick="doRegister()">
+      <span class="badge post">POST</span> /api/users/register
+    </button>
+    <div id="reg-result" class="result"></div>
+    <p class="info-text">가입 후 입력한 이메일로 인증 링크가 발송됩니다.</p>
+  </div>
+
+  <!-- ── 이메일 인증 패널 ── -->
+  <div id="panel-verify" class="panel">
+    <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:16px">
+      이메일로 받은 인증 링크의 <code style="background:#f0f2f5;padding:2px 6px;border-radius:4px">token=</code> 뒤 값을 붙여넣으세요.
+    </p>
+    <label>인증 토큰</label>
+    <input id="verify-token" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+
+    <button class="btn" onclick="doVerify()">
+      <span class="badge get">GET</span> /api/users/verify
+    </button>
+    <div id="verify-result" class="result"></div>
+
+    <div class="divider">또는 메일 재발송</div>
+    <label style="margin-top:16px">이메일</label>
+    <input id="resend-email" type="email" placeholder="2242879@donga.ac.kr" />
+    <button class="btn secondary" onclick="doResend()">
+      <span class="badge post">POST</span> 인증 메일 재발송
+    </button>
+    <div id="resend-result" class="result"></div>
+  </div>
+
+  <!-- ── 로그인 패널 ── -->
+  <div id="panel-login" class="panel">
+    <label>이메일</label>
+    <input id="login-email" type="email" placeholder="2242879@donga.ac.kr" />
+
+    <label>비밀번호</label>
+    <input id="login-pw" type="password" placeholder="비밀번호" />
+
+    <button class="btn" onclick="doLogin()">
+      <span class="badge post">POST</span> /auth/login
+    </button>
+    <div id="login-result" class="result"></div>
+    <div id="token-box" class="token-box">
+      <b>🔑 Access Token</b><span id="access-token-display"></span>
+      <b style="margin-top:8px">🔄 Refresh Token</b><span id="refresh-token-display"></span>
+    </div>
+    <p class="info-text">로그인 성공 시 토큰이 자동으로 저장됩니다.</p>
+  </div>
+
+  <!-- ── 내 정보 패널 ── -->
+  <div id="panel-me" class="panel">
+    <label>User ID</label>
+    <input id="me-userid" type="number" placeholder="1" value="1" />
+
+    <button class="btn" onclick="doGetUser()">
+      <span class="badge get">GET</span> /api/users/{id}
+    </button>
+    <div id="me-result" class="result"></div>
+
+    <div class="divider">토큰 재발급</div>
+    <button class="btn secondary" onclick="doRefresh()">
+      <span class="badge post">POST</span> /auth/refresh (저장된 Refresh Token 사용)
+    </button>
+    <div id="refresh-result" class="result"></div>
+  </div>
+
+</div><!-- /.card -->
+
+<script>
+  const API = '';  // 같은 origin (localhost:8080)
+
+  let savedAccessToken  = localStorage.getItem('accessToken')  || '';
+  let savedRefreshToken = localStorage.getItem('refreshToken') || '';
+
+  /* ── 탭 전환 ── */
+  function switchTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  /* ── 응답 표시 ── */
+  function showResult(id, ok, data) {
+    const el = document.getElementById(id);
+    el.className = 'result ' + (ok ? 'ok' : 'err');
+    el.style.display = 'block';
+    el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  }
+
+  /* ── 공통 fetch ── */
+  async function apiFetch(method, path, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(API + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = text; }
+    return { ok: res.ok, status: res.status, data: json };
+  }
+
+  /* ── 회원가입 ── */
+  async function doRegister() {
+    const body = {
+      email:      document.getElementById('reg-email').value.trim(),
+      password:   document.getElementById('reg-pw').value,
+      name:       document.getElementById('reg-name').value.trim(),
+      studentId:  document.getElementById('reg-sid').value.trim(),
+      department: document.getElementById('reg-dept').value.trim(),
+      grade:      parseInt(document.getElementById('reg-grade').value),
+      birthDate:  document.getElementById('reg-birth').value,
+      gender:     document.getElementById('reg-gender').value
+    };
+    const r = await apiFetch('POST', '/api/users/register', body);
+    showResult('reg-result', r.ok, r.data);
+  }
+
+  /* ── 이메일 인증 ── */
+  async function doVerify() {
+    const token = document.getElementById('verify-token').value.trim();
+    const r = await apiFetch('GET', `/api/users/verify?token=${encodeURIComponent(token)}`);
+    showResult('verify-result', r.ok, r.data);
+  }
+
+  /* ── 인증 메일 재발송 ── */
+  async function doResend() {
+    const email = document.getElementById('resend-email').value.trim();
+    const r = await apiFetch('POST', `/api/users/resend-token?email=${encodeURIComponent(email)}`);
+    showResult('resend-result', r.ok, r.data);
+  }
+
+  /* ── 로그인 ── */
+  async function doLogin() {
+    const body = {
+      email:    document.getElementById('login-email').value.trim(),
+      password: document.getElementById('login-pw').value
+    };
+    const r = await apiFetch('POST', '/auth/login', body);
+    showResult('login-result', r.ok, r.data);
+    if (r.ok && r.data?.accessToken) {
+      savedAccessToken  = r.data.accessToken;
+      savedRefreshToken = r.data.refreshToken;
+      localStorage.setItem('accessToken',  savedAccessToken);
+      localStorage.setItem('refreshToken', savedRefreshToken);
+      document.getElementById('access-token-display').textContent  = savedAccessToken;
+      document.getElementById('refresh-token-display').textContent = savedRefreshToken;
+      document.getElementById('token-box').style.display = 'block';
+    }
+  }
+
+  /* ── 유저 조회 ── */
+  async function doGetUser() {
+    const uid = document.getElementById('me-userid').value;
+    const r = await apiFetch('GET', `/api/users/${uid}`, null, savedAccessToken);
+    showResult('me-result', r.ok, r.data);
+  }
+
+  /* ── 토큰 재발급 ── */
+  async function doRefresh() {
+    if (!savedRefreshToken) {
+      showResult('refresh-result', false, '저장된 Refresh Token이 없습니다. 먼저 로그인하세요.');
+      return;
+    }
+    const r = await apiFetch('POST', '/auth/refresh', { refreshToken: savedRefreshToken });
+    showResult('refresh-result', r.ok, r.data);
+    if (r.ok && r.data?.accessToken) {
+      savedAccessToken  = r.data.accessToken;
+      savedRefreshToken = r.data.refreshToken;
+      localStorage.setItem('accessToken',  savedAccessToken);
+      localStorage.setItem('refreshToken', savedRefreshToken);
+    }
+  }
+
+  /* ── 초기화: 저장된 토큰 복원 ── */
+  if (savedAccessToken) {
+    document.getElementById('access-token-display').textContent  = savedAccessToken;
+    document.getElementById('refresh-token-display').textContent = savedRefreshToken;
+    document.getElementById('token-box').style.display = 'block';
+  }
+</script>
+</body>
+</html>

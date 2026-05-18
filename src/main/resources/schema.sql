@@ -220,3 +220,130 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- =====================================================
+-- 9. 매칭 사용자 간 1:1 채팅
+--    · match_id 기준으로 채팅방 생성
+--    · 매칭된 사용자만 채팅 가능
+--    · 채팅방 상태 관리 (ACTIVE / CLOSED / BLOCKED)
+-- =====================================================
+    CREATE TABLE chat_rooms (
+                                room_id       BIGINT NOT NULL AUTO_INCREMENT,
+                                match_id      BIGINT NOT NULL,
+
+                                status        ENUM('ACTIVE','CLOSED','BLOCKED')
+                  NOT NULL DEFAULT 'ACTIVE',
+
+                                created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                                PRIMARY KEY (room_id),
+
+                                CONSTRAINT fk_chat_match
+                                    FOREIGN KEY (match_id)
+                                        REFERENCES matches(match_id)
+                                        ON DELETE CASCADE,
+
+        -- 매칭 1건당 채팅방 1개만 생성
+                                UNIQUE KEY uq_chat_match (match_id)
+
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- =====================================================
+-- 10. 채팅 메시지
+--     · 메시지 내용 저장
+--     · 읽음 여부 관리
+--     · 삭제 여부 관리 (내 화면에서만 삭제용)
+-- =====================================================
+    CREATE TABLE chat_messages (
+                                   message_id     BIGINT NOT NULL AUTO_INCREMENT,
+
+                                   room_id        BIGINT NOT NULL,
+                                   sender_id      BIGINT NOT NULL,
+
+                                   content        TEXT NOT NULL COMMENT '채팅 메시지 내용',
+
+                                   is_read        BOOLEAN NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
+                                   is_deleted     BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+
+                                   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                                   PRIMARY KEY (message_id),
+
+                                   CONSTRAINT fk_message_room
+                                       FOREIGN KEY (room_id)
+                                           REFERENCES chat_rooms(room_id)
+                                           ON DELETE CASCADE,
+
+                                   CONSTRAINT fk_message_sender
+                                       FOREIGN KEY (sender_id)
+                                           REFERENCES users(user_id)
+                                           ON DELETE CASCADE,
+
+                                   INDEX idx_room_created (room_id, created_at),
+                                   INDEX idx_unread (room_id, is_read)
+
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- =====================================================
+-- 11. 사용자 신고 기능
+--     · 욕설 / 스팸 / 부적절한 사진 등 신고 가능
+--     · 신고 기록 저장
+-- =====================================================
+    CREATE TABLE reports (
+                             report_id       BIGINT NOT NULL AUTO_INCREMENT,
+
+                             reporter_id     BIGINT NOT NULL COMMENT '신고한 사용자',
+                             reported_id     BIGINT NOT NULL COMMENT '신고당한 사용자',
+
+                             reason          VARCHAR(255) NOT NULL COMMENT '신고 사유',
+
+                             created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                             PRIMARY KEY (report_id),
+
+                             CONSTRAINT fk_report_reporter
+                                 FOREIGN KEY (reporter_id)
+                                     REFERENCES users(user_id)
+                                     ON DELETE CASCADE,
+
+                             CONSTRAINT fk_report_reported
+                                 FOREIGN KEY (reported_id)
+                                     REFERENCES users(user_id)
+                                     ON DELETE CASCADE,
+
+                             INDEX idx_reported (reported_id)
+
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- =====================================================
+-- 12. 사용자 차단 기능
+--     · 특정 사용자 차단 가능
+--     · 차단 시 채팅 및 상호작용 제한
+-- =====================================================
+    CREATE TABLE blocks (
+                            block_id        BIGINT NOT NULL AUTO_INCREMENT,
+
+                            blocker_id      BIGINT NOT NULL COMMENT '차단한 사용자',
+                            blocked_id      BIGINT NOT NULL COMMENT '차단당한 사용자',
+
+                            created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                            PRIMARY KEY (block_id),
+
+                            CONSTRAINT fk_block_blocker
+                                FOREIGN KEY (blocker_id)
+                                    REFERENCES users(user_id)
+                                    ON DELETE CASCADE,
+
+                            CONSTRAINT fk_block_blocked
+                                FOREIGN KEY (blocked_id)
+                                    REFERENCES users(user_id)
+                                    ON DELETE CASCADE,
+
+        -- 동일 사용자 중복 차단 방지
+                            UNIQUE KEY uq_block_pair (blocker_id, blocked_id)
+
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

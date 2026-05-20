@@ -15,6 +15,18 @@ uploads/profiles/*
 # application-secret.yml (비밀번호 등 민감 정보)
 src/main/resources/application-secret.yml
 
+# Eclipse / STS
+.metadata/
+bin/
+out/
+
+# VS Code
+.vscode/
+
+# 테스트용 임시 파일
+matching-test.html
+test-data.sql
+
 # OS
 .DS_Store
 Thumbs.db

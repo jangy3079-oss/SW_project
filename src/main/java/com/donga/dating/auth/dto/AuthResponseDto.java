@@ -16,5 +16,5 @@ public class AuthResponseDto {
     private String refreshToken;
     private String email;
     private String name;
-
+    private Long userId;
 }

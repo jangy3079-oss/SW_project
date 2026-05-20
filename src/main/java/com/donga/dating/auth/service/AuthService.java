@@ -46,7 +46,14 @@ public class AuthService {
         String refreshToken = jwtProvider.generateRefreshToken(user);
 
         log.info("로그인 성공: {}", request.getEmail());
-        return new AuthResponseDto(accessToken, refreshToken, user.getEmail(), user.getName());
+        return AuthResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .email(user.getEmail())
+                .name(user.getName())
+                .userId(user.getUserId())
+                .build();
+
     }
 
     public AuthResponseDto refreshToken(TokenRefreshRequestDto request) {
@@ -58,8 +65,20 @@ public class AuthService {
         }
 
         String newAccessToken = jwtProvider.refreshAccessToken(request.getRefreshToken());
+        String email = jwtProvider.validateAndGetSubject(newAccessToken);
 
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException("유저를 찾을 수 없습니다."));
+
+        String newRefreshToken = jwtProvider.generateRefreshToken(user);
         log.info("토큰 재발급 성공");
-        return new AuthResponseDto(newAccessToken, request.getRefreshToken(), null, null);
+        return AuthResponseDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(request.getRefreshToken())
+                .email(user.getEmail())
+                .name(user.getName())
+                .userId(user.getUserId())
+                .build();
+
     }
 }

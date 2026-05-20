@@ -76,6 +76,9 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String preferences; // JSON 문자열로 저장 (사용자 취향/태그 칩)
+
     // ── 비즈니스 메서드 ──────────────────────────
 
     public void updateProfile(String name,
@@ -96,6 +99,14 @@ public class User {
 
     public void updateBio(String bio) {
         this.bio = bio;
+    }
+
+    public void updatePreferences(String preferencesJson) {
+        this.preferences = preferencesJson;
+    }
+
+    public String getPreferences() {
+        return this.preferences;
     }
 
     public void verifyEmail() {

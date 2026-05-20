@@ -10,6 +10,10 @@ import com.donga.dating.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesUpdateRequest;
+import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -59,4 +63,30 @@ public class UserService {
     }
 
     // TODO: 나머지 비즈니스 로직 구현
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public PreferencesResponse getPreferences(Long userId) {
+        User user = getUser(userId);
+        String json = user.getPreferences();
+        if (json == null) return PreferencesResponse.from(java.util.Collections.emptyMap());
+        try {
+            java.util.Map<String, String> map = OBJECT_MAPPER.readValue(json, new TypeReference<java.util.Map<String, String>>() {});
+            return PreferencesResponse.from(map);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public PreferencesResponse updatePreferences(Long userId, PreferencesUpdateRequest request) {
+        User user = getUser(userId);
+        try {
+            String json = OBJECT_MAPPER.writeValueAsString(request.preferences());
+            user.updatePreferences(json);
+            return PreferencesResponse.from(request.preferences());
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

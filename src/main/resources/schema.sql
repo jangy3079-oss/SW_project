@@ -23,6 +23,7 @@ CREATE TABLE users (
     department    VARCHAR(50)     NOT NULL COMMENT '학과',
     grade         TINYINT         NOT NULL COMMENT '학년 1-4',
     bio           TEXT            NULL     COMMENT '자기소개',
+    preferences   TEXT            NULL     COMMENT '사용자 취향/태그 JSON',
 
     -- 랭크 관련
     rank_score    DECIMAL(3,2)    NOT NULL DEFAULT 0.00 COMMENT '평균 평가 점수 (0.00~5.00)',

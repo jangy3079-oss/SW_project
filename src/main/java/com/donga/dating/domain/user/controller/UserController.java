@@ -3,6 +3,9 @@ package com.donga.dating.domain.user.controller;
 import com.donga.dating.domain.user.dto.ProfileDtos.BioUpdateRequest;
 import com.donga.dating.domain.user.dto.ProfileDtos.ProfileResponse;
 import com.donga.dating.domain.user.dto.ProfileDtos.ProfileUpsertRequest;
+import com.donga.dating.domain.user.dto.PreferenceDtos;
+import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesResponse;
+import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesUpdateRequest;
 import com.donga.dating.domain.user.service.UserService;
 import com.donga.dating.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +44,17 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody BioUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(userService.updateBio(userId, request)));
+    }
+
+    @GetMapping("/{userId}/preferences")
+    public ResponseEntity<ApiResponse<PreferencesResponse>> getPreferences(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getPreferences(userId)));
+    }
+
+    @PutMapping("/{userId}/preferences")
+    public ResponseEntity<ApiResponse<PreferencesResponse>> updatePreferences(
+            @PathVariable Long userId,
+            @RequestBody PreferencesUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updatePreferences(userId, request)));
     }
 }

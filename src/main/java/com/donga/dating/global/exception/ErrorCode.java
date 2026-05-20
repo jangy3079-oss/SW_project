@@ -17,6 +17,8 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
     STUDENT_ID_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 학번입니다."),
     INVALID_DONGA_EMAIL(HttpStatus.BAD_REQUEST, "동아대학교 이메일(@donga.ac.kr)만 허용됩니다."),
+    BIO_EMPTY(HttpStatus.BAD_REQUEST, "자기소개는 1자 이상 입력해야 합니다."),
+    BIO_TOO_LONG(HttpStatus.BAD_REQUEST, "자기소개는 500자 이하여야 합니다."),
 
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."),
@@ -24,6 +26,7 @@ public enum ErrorCode {
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
     INVALID_FILE(HttpStatus.BAD_REQUEST, "올바르지 않은 파일입니다."),
     UNSUPPORTED_FILE_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 파일 형식입니다. (jpg, jpeg, png, webp)"),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기는 5MB 이하여야 합니다."),
     FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
 
     // 매칭
@@ -34,7 +37,11 @@ public enum ErrorCode {
 
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
-    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다.");
+    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
+
+    // 취향/태그
+    PREF_INVALID_KEY(HttpStatus.BAD_REQUEST, "존재하지 않는 취향 카테고리입니다."),
+    PREF_INVALID_VALUE(HttpStatus.BAD_REQUEST, "허용되지 않는 취향 값입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

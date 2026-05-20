@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Preferences",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^[a-z0-9_]+$": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    }
+  },
+  "description": "Map of preference category id -> value (string) or values (string[] for multi)"
+}

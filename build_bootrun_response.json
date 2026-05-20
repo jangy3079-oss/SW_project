@@ -1,0 +1,477 @@
+﻿{
+    "success":  true,
+    "message":  "success",
+    "data":  {
+                 "categories":  [
+                                    {
+                                        "id":  "smoking",
+                                        "label":  "í¡ì° ì¬ë¶",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "no_smoke",
+                                                            "label":  "ë¹í¡ì° (ë´ë°° ëì ì ë ì«ì´ì 🙅ââï¸)",
+                                                            "emoji":  "🚭"
+                                                        },
+                                                        {
+                                                            "value":  "smoke",
+                                                            "label":  "í¡ì° (ìíë¡ì ì°¸ì ì ìì§ 🚬)",
+                                                            "emoji":  "🚬"
+                                                        },
+                                                        {
+                                                            "value":  "vape",
+                                                            "label":  "ì ìë´ë°° (ëì ëí¨ 💨)",
+                                                            "emoji":  "💨"
+                                                        },
+                                                        {
+                                                            "value":  "only_when_drinking",
+                                                            "label":  "ì  ë§ì¤ ëë§ (ì ìë¦¬ íì )",
+                                                            "emoji":  "🥂"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "drinking",
+                                        "label":  "ìì£¼ ì¤íì¼",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "party",
+                                                            "label":  "ìì½ì¬ ìì  🍻"
+                                                        },
+                                                        {
+                                                            "value":  "moderate",
+                                                            "label":  "ì ë¹í ì¦ê¹ 🍺"
+                                                        },
+                                                        {
+                                                            "value":  "sober",
+                                                            "label":  "ìì°/ë\u0085¼ìì½ 🥤"
+                                                        },
+                                                        {
+                                                            "value":  "wine_highball",
+                                                            "label":  "ìì¸/íì´ë³¼í 🍷"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "fitness",
+                                        "label":  "ì´ë/ìê¸°ê³ë°",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "gym",
+                                                            "label":  "í¬ì¤ ì¤ë\u0085 🏋ï¸ââï¸"
+                                                        },
+                                                        {
+                                                            "value":  "running",
+                                                            "label":  "ë¬ë/ì°ì±\u0085í 🏃ââï¸"
+                                                        },
+                                                        {
+                                                            "value":  "spectator",
+                                                            "label":  "ì¤í¬ì¸  ê´ëí â¾"
+                                                        },
+                                                        {
+                                                            "value":  "home",
+                                                            "label":  "ì¨ì¬ê¸° ì´ë(ì§ì½) 🛌"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "weekend",
+                                        "label":  "ì£¼ë§ íë",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "outgoing",
+                                                            "label":  "íë¡ ë°ëì´/ë°ìì´ 🗺ï¸"
+                                                        },
+                                                        {
+                                                            "value":  "local",
+                                                            "label":  "íë¨/ë¡ì»¬ ì§ë°ë ¹ 🏘ï¸"
+                                                        },
+                                                        {
+                                                            "value":  "selective",
+                                                            "label":  "ì íì  ì¸ì¶í 🏠"
+                                                        },
+                                                        {
+                                                            "value":  "home_master",
+                                                            "label":  "ì§ëì´/ì§ìì´ ë§ì¤í° 🎮"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "pet",
+                                        "label":  "ë°ë ¤ëë¬¼ ì±í¥",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "dog",
+                                                            "label":  "ëëì´í 🐶"
+                                                        },
+                                                        {
+                                                            "value":  "cat",
+                                                            "label":  "ë¥ì´í 🐱"
+                                                        },
+                                                        {
+                                                            "value":  "all",
+                                                            "label":  "ëë¬¼ ë¤ ì¢ì 🐾"
+                                                        },
+                                                        {
+                                                            "value":  "none",
+                                                            "label":  "ë°ë ¤ëë¬¼ ìì/ëì  ì§ì¬ 🖥ï¸"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "contact",
+                                        "label":  "ì°ë½ ì¤íì¼",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "fast_reply",
+                                                            "label":  "ì¹¼ëµ ìì  â¡"
+                                                        },
+                                                        {
+                                                            "value":  "focus_first",
+                                                            "label":  "í  ì¼ ì°ì  📚"
+                                                        },
+                                                        {
+                                                            "value":  "call_prefer",
+                                                            "label":  "ì¹´í¡ë³´ë¨ ì í 📞"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "pay",
+                                        "label":  "ë°ì´í¸ ë¹ì©",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "split",
+                                                            "label":  "ê¹ëí 5:5 💳"
+                                                        },
+                                                        {
+                                                            "value":  "take_turns",
+                                                            "label":  "ë²ê°ì ë´ê¸° 💸"
+                                                        },
+                                                        {
+                                                            "value":  "flex",
+                                                            "label":  "ì¬ì  ìë ì¬ëì´ 🤝"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "culture",
+                                        "label":  "ë¬¸í/ì¬ê° ì·¨í¥",
+                                        "type":  "multi",
+                                        "options":  [
+                                                        {
+                                                            "value":  "music",
+                                                            "label":  "ìì\u0085/ì\u0085ê¸° ì§ì¬ 🎸"
+                                                        },
+                                                        {
+                                                            "value":  "movie",
+                                                            "label":  "ë·í/ì¥ë¥´ë¬¼ ëí 🎬"
+                                                        },
+                                                        {
+                                                            "value":  "gaming",
+                                                            "label":  "ê²ì/PCë°© ë°ì´í¸ 🎮"
+                                                        },
+                                                        {
+                                                            "value":  "productive",
+                                                            "label":  "ìì°ì  ë´ì§ 💻"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "commute",
+                                        "label":  "íµí/ì²´ë ¥ ì¤íì¼",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "strong",
+                                                            "label":  "ê°ì²  ì²´ë ¥í 💪"
+                                                        },
+                                                        {
+                                                            "value":  "need_transport",
+                                                            "label":  "íì¹ íìí 🚌"
+                                                        },
+                                                        {
+                                                            "value":  "flat_lover",
+                                                            "label":  "íì§ ìì°¬í 🚶ââï¸"
+                                                        },
+                                                        {
+                                                            "value":  "homebody",
+                                                            "label":  "ì§ëì´/ì§ìì´í 🏠"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "exam_spot",
+                                        "label":  "ìíê¸°ê° ì¶ëª° ì¥ì",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "library",
+                                                            "label":  "íë¦¼/ë¶ë¯¼ëìê´ ë°¤ì 📚"
+                                                        },
+                                                        {
+                                                            "value":  "cafe",
+                                                            "label":  "ì¹´ê³µ íë ì´ì¤ â"
+                                                        },
+                                                        {
+                                                            "value":  "escape",
+                                                            "label":  "ìíì ìë¡í 🍜"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "contact_freq",
+                                        "label":  "ì°ë½ ë¹ë",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "real_time",
+                                                            "label":  "ì¤ìê° í¡! 🗲"
+                                                        },
+                                                        {
+                                                            "value":  "batch",
+                                                            "label":  "ëª°ìì ëíí 🕒"
+                                                        },
+                                                        {
+                                                            "value":  "call",
+                                                            "label":  "ì í ì í¸í 📞"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "date_freq",
+                                        "label":  "ë°ì´í¸ ì£¼ê¸°",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "frequent",
+                                                            "label":  "ì£¼3~4í ì´ì"
+                                                        },
+                                                        {
+                                                            "value":  "weekly",
+                                                            "label":  "ì£¼1~2í"
+                                                        },
+                                                        {
+                                                            "value":  "sporadic",
+                                                            "label":  "ê²©ì£¼/ì ëì "
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "conflict",
+                                        "label":  "ê°ë± í´ê²° ë°©ì",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "immediate",
+                                                            "label":  "ê·¸ ìë¦¬ìì í´ê²°"
+                                                        },
+                                                        {
+                                                            "value":  "cooldown",
+                                                            "label":  "ìê°í  ìê° íì"
+                                                        },
+                                                        {
+                                                            "value":  "avoid",
+                                                            "label":  "ë¥ê¸ê² ì íê²"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "weekend_type",
+                                        "label":  "ì£¼ë§ ìë²½í ë°©ë²",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "outdoor_fun",
+                                                            "label":  "í«í/ì¬í"
+                                                        },
+                                                        {
+                                                            "value":  "home_netflix",
+                                                            "label":  "ë·í/ì§ì½"
+                                                        },
+                                                        {
+                                                            "value":  "productive",
+                                                            "label":  "ì´ë/ìê¸°ê³ë°"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "food",
+                                        "label":  "ì¢ìíë ìì",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "spicy",
+                                                            "label":  "ë§¤ì½¤/ìê·¹"
+                                                        },
+                                                        {
+                                                            "value":  "clean",
+                                                            "label":  "ê¹ë/ì ê°"
+                                                        },
+                                                        {
+                                                            "value":  "soup",
+                                                            "label":  "ë¨ëí êµ­ë¬¼"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "stress",
+                                        "label":  "ì¤í¸ë ì¤ ì¹í¸í¤",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "eat",
+                                                            "label":  "ë§ìë ê² ë¨¹ê¸°"
+                                                        },
+                                                        {
+                                                            "value":  "hobby",
+                                                            "label":  "ì·¨ë¯¸ ëª°ë"
+                                                        },
+                                                        {
+                                                            "value":  "sleep",
+                                                            "label":  "í¹ ìê¸°/ì íë¸"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "festival",
+                                        "label":  "ì¶ì  ëª¨ìµ",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "front_row",
+                                                            "label":  "ë§¨ ì ì§ê´í"
+                                                        },
+                                                        {
+                                                            "value":  "foodie",
+                                                            "label":  "ì£¼ë§/í¸ëí¸ë­ í"
+                                                        },
+                                                        {
+                                                            "value":  "avoid",
+                                                            "label":  "ìëë¬ìì í¼í¨"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "cc_opinion",
+                                        "label":  "CC(ìº í¼ì¤ì»¤í) ê²¬í´",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "love_it",
+                                                            "label":  "ìº í¼ì¤ ë­ë§ ì°¬ì±"
+                                                        },
+                                                        {
+                                                            "value":  "conditional",
+                                                            "label":  "ì¡°ê±´ë¶ ì°¬ì±(ë¹ë° ì°ì )"
+                                                        },
+                                                        {
+                                                            "value":  "cautious",
+                                                            "label":  "ì¡°ì¬ì¤ë¬ì"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "relationship_goal",
+                                        "label":  "ë§ë¨ì ëª©ì ",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "serious",
+                                                            "label":  "ì§ì§íê³  ì¤ë"
+                                                        },
+                                                        {
+                                                            "value":  "gradual",
+                                                            "label":  "ì¸âì°ì¸"
+                                                        },
+                                                        {
+                                                            "value":  "casual_friend",
+                                                            "label":  "ëë¤/íêµ ì¹êµ¬ ê²¸ ì°ì¸"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "personal_space",
+                                        "label":  "ê°ì¸ìê° vs êµ¬ì",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "all_in",
+                                                            "label":  "ì¬ì¸í"
+                                                        },
+                                                        {
+                                                            "value":  "independent",
+                                                            "label":  "ë°ë¡ ë ê°ì´"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "reaction",
+                                        "label":  "ëí ë¦¬ì¡ì\u0085",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "empathy",
+                                                            "label":  "ê³µê°í"
+                                                        },
+                                                        {
+                                                            "value":  "advice",
+                                                            "label":  "í´ê²°ì±\u0085 ì ìí"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "study_style",
+                                        "label":  "ìí/ê³¼ì  ì¤íì¼",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "cram",
+                                                            "label":  "ë²¼ë½ì¹ê¸°"
+                                                        },
+                                                        {
+                                                            "value":  "plan",
+                                                            "label":  "ë¯¸ë¦¬ë¯¸ë¦¬"
+                                                        },
+                                                        {
+                                                            "value":  "carry",
+                                                            "label":  "íí íëìºë¦¬"
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "study_balance",
+                                        "label":  "íì\u0085Â·ì°ì  ë°¸ë°ì¤",
+                                        "type":  "single",
+                                        "options":  [
+                                                        {
+                                                            "value":  "together",
+                                                            "label":  "ìíê¸°ê°ìë ê°ì´"
+                                                        },
+                                                        {
+                                                            "value":  "focus",
+                                                            "label":  "ìíê¸°ê°ì ê°ì ì§ì¤"
+                                                        }
+                                                    ]
+                                    }
+                                ],
+                 "examplePreferences":  {
+                                            "smoking":  "no_smoke",
+                                            "drinking":  "moderate",
+                                            "fitness":  "gym",
+                                            "culture":  [
+                                                            "music",
+                                                            "movie"
+                                                        ],
+                                            "commute":  "strong",
+                                            "contact":  "fast_reply",
+                                            "relationship_goal":  "gradual"
+                                        }
+             }
+}

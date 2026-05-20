@@ -1,0 +1,7 @@
+body{font-family: Arial, sans-serif; padding:20px}
+.container{max-width:900px;margin:0 auto}
+.primary-photo img{max-width:300px;border-radius:8px}
+.photo-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.photo-grid img{width:100px;height:100px;object-fit:cover;border-radius:6px}
+.photo-grid img.primary{outline:3px solid #4caf50}
+.msg{margin-top:8px;color:#333}

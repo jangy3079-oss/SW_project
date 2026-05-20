@@ -1,0 +1,35 @@
+﻿{
+    "success":  true,
+    "message":  "success",
+    "data":  {
+                 "profile":  {
+                                 "userId":  1,
+                                 "email":  "pref-test@donga.ac.kr",
+                                 "name":  "Profile Test User",
+                                 "gender":  "MALE",
+                                 "birthDate":  "2000-01-01",
+                                 "studentId":  "20260001",
+                                 "department":  "Computer Science",
+                                 "grade":  4,
+                                 "bio":  "profile updated from test",
+                                 "rankScore":  0.00,
+                                 "rankTier":  "BRONZE",
+                                 "evalCount":  0,
+                                 "emailVerified":  false,
+                                 "isActive":  true
+                             },
+                 "photos":  [
+                                {
+                                    "photoId":  4,
+                                    "userId":  1,
+                                    "fileName":  "81813087-62de-4f65-9599-a40d17fcbc10.png",
+                                    "viewUrl":  "/uploads/81813087-62de-4f65-9599-a40d17fcbc10.png",
+                                    "originalName":  "copilot-photo-b.png",
+                                    "fileSize":  12,
+                                    "isPrimary":  true,
+                                    "photoOrder":  0,
+                                    "createdAt":  "2026-05-20T16:50:43"
+                                }
+                            ]
+             }
+}

@@ -3,6 +3,7 @@ package com.donga.dating.domain.user.controller;
 import com.donga.dating.domain.user.dto.ProfileDtos.BioUpdateRequest;
 import com.donga.dating.domain.user.dto.ProfileDtos.ProfileResponse;
 import com.donga.dating.domain.user.dto.ProfileDtos.ProfileUpsertRequest;
+import com.donga.dating.domain.user.dto.ProfileDtos.ProfileWithPhotosResponse;
 import com.donga.dating.domain.user.dto.PreferenceDtos;
 import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesResponse;
 import com.donga.dating.domain.user.dto.PreferenceDtos.PreferencesUpdateRequest;
@@ -17,8 +18,11 @@ import org.springframework.web.bind.annotation.*;
  * POST   /api/users/register   - 회원가입 (로그인 담당자 구현)
  * POST   /api/users/login      - 로그인   (로그인 담당자 구현)
  * GET    /api/users/{id}       - 프로필 조회
+ * GET    /api/users/{id}/profile-with-photos - 프로필 + 사진 통합 조회 (프론트용)
  * POST   /api/users/{id}/profile - 프로필 등록/수정
  * PATCH  /api/users/{id}/bio   - 자기소개 수정
+ * GET    /api/users/{id}/preferences - 취향/태그 조회
+ * PUT    /api/users/{id}/preferences - 취향/태그 수정
  */
 @RestController
 @RequestMapping("/api/users")
@@ -30,6 +34,11 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<ProfileResponse>> getUser(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success(userService.getProfile(userId)));
+    }
+
+    @GetMapping("/{userId}/profile-with-photos")
+    public ResponseEntity<ApiResponse<ProfileWithPhotosResponse>> getProfileWithPhotos(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getProfileWithPhotos(userId)));
     }
 
     @PostMapping("/{userId}/profile")

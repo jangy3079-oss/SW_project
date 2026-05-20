@@ -1,11 +1,13 @@
 package com.donga.dating.domain.user.dto;
 
+import com.donga.dating.domain.photo.dto.UserPhotoResponse;
 import com.donga.dating.domain.user.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 public final class ProfileDtos {
 
@@ -60,6 +62,24 @@ public final class ProfileDtos {
                     .evalCount(user.getEvalCount())
                     .emailVerified(user.isEmailVerified())
                     .isActive(user.getIsActive())
+                    .build();
+        }
+    }
+
+    /**
+     * 프론트 연동용: 프로필 + 사진 통합 응답
+     * GET /api/users/{userId}/profile-with-photos 에서 사용
+     */
+    @Getter
+    @Builder
+    public static class ProfileWithPhotosResponse {
+        private ProfileResponse profile;
+        private List<UserPhotoResponse> photos;
+
+        public static ProfileWithPhotosResponse from(User user, List<UserPhotoResponse> photos) {
+            return ProfileWithPhotosResponse.builder()
+                    .profile(ProfileResponse.from(user))
+                    .photos(photos)
                     .build();
         }
     }

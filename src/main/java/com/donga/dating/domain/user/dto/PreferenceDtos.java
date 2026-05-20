@@ -10,15 +10,15 @@ public final class PreferenceDtos {
     private PreferenceDtos() {
     }
 
-    public record PreferencesUpdateRequest(Map<String, String> preferences) {
+    public record PreferencesUpdateRequest(Map<String, Object> preferences) {
     }
 
     @Getter
     @Builder
     public static class PreferencesResponse {
-        private Map<String, String> preferences;
+        private Map<String, Object> preferences;
 
-        public static PreferencesResponse from(Map<String, String> prefs) {
+        public static PreferencesResponse from(Map<String, Object> prefs) {
             return PreferencesResponse.builder()
                     .preferences(prefs)
                     .build();

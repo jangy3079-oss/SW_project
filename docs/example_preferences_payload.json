@@ -1,0 +1,9 @@
+{
+  "preferences": {
+    "smoking": "no_smoke",
+    "drinking": "moderate",
+    "culture": ["music","movie"],
+    "contact": "fast_reply",
+    "relationship_goal": "gradual"
+  }
+}

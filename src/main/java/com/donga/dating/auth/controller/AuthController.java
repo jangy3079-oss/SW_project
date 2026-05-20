@@ -38,6 +38,7 @@ public class AuthController {
                 .refreshToken(refreshToken)
                 .email(user.getEmail())
                 .name(user.getName())
+                .userId(user.getUserId())
                 .build();
 
         return ResponseEntity.ok(response);
@@ -61,6 +62,7 @@ public class AuthController {
                 .refreshToken(newRefreshToken)
                 .email(user.getEmail())
                 .name(user.getName())
+                .userId(user.getUserId())
                 .build();
 
         return ResponseEntity.ok(response);

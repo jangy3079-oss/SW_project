@@ -1,0 +1,13 @@
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "email": "2242879@donga.ac.kr",
+  "password": "1235",
+  "name": "이길동",
+  "studentId": "20260001",
+  "department": "컴퓨터공학과",
+  "grade": 3,
+  "birthDate": "2000-01-01",
+  "gender": "MALE"
+}

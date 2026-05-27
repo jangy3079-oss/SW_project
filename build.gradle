@@ -32,6 +32,8 @@ dependencies {
 
     // DB
     runtimeOnly 'com.mysql:mysql-connector-j'
+    // Flyway for versioned DB migrations
+    implementation 'org.flywaydb:flyway-core'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

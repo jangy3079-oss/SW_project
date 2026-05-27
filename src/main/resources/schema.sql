@@ -347,3 +347,24 @@ DELIMITER ;
                             UNIQUE KEY uq_block_pair (blocker_id, blocked_id)
 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =====================================================
+-- 13. 공강시간 (에브리타임 시간표 분석 결과)
+--     · 사용자가 시간표 이미지를 업로드하면 FastAPI 분석 후 저장
+--     · 업로드마다 기존 데이터 전체 교체 (upsert 불필요)
+-- =====================================================
+CREATE TABLE free_time_slots (
+    slot_id      BIGINT    NOT NULL AUTO_INCREMENT,
+    user_id      BIGINT    NOT NULL,
+    day_of_week  ENUM('MON','TUE','WED','THU','FRI') NOT NULL COMMENT '요일',
+    start_time   TIME      NOT NULL COMMENT '공강 시작 시각',
+    end_time     TIME      NOT NULL COMMENT '공강 종료 시각',
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (slot_id),
+    CONSTRAINT fk_slot_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_slot_user (user_id),
+    INDEX idx_slot_day  (user_id, day_of_week)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -49,6 +49,11 @@ logging:
     com.donga.dating: DEBUG
     org.hibernate.SQL: DEBUG
 
+# 에브리타임 시간표 분석 서비스 (Python FastAPI)
+timetable:
+  analysis:
+    url: http://localhost:8000/analyze
+
 # JWT 설정
 jwt:
   secret: my-super-secret-key-1234567890-abcdefghijkl

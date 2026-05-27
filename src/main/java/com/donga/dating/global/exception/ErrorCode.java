@@ -38,7 +38,11 @@ public enum ErrorCode {
 
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
-    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다.");
+    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
+
+    // 시간표
+    TIMETABLE_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "시간표 분석에 실패했습니다."),
+    TIMETABLE_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "시간표 분석 서버에 연결할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

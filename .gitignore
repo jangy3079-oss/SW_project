@@ -18,3 +18,13 @@ src/main/resources/application-secret.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# 시간표 분석 테스트 이미지 (커밋 제외)
+KakaoTalk_Photo_*.jpeg
+KakaoTalk_Photo_*.jpg
+KakaoTalk_Photo_*.png
+IMG_*.jpeg
+IMG_*.jpg
+IMG_*.png
+debug_*.jpg
+debug_*.png

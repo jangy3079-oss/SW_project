@@ -35,6 +35,10 @@ public enum ErrorCode {
     MATCH_NOT_FOUND(HttpStatus.NOT_FOUND, "매칭을 찾을 수 없습니다."),
     MATCH_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 매칭입니다."),
 
+    // 좋아요
+    LIKING_SELF(HttpStatus.BAD_REQUEST, "자기 자신을 좋아요할 수 없습니다."),
+    ALREADY_LIKED(HttpStatus.CONFLICT, "이미 좋아요를 보낸 사용자입니다."),
+
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),

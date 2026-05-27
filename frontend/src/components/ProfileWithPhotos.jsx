@@ -26,8 +26,15 @@ export default function ProfileWithPhotos({ userId }){
 
   return (
     <section>
-      <h2>{profile.name} 님의 프로필</h2>
-      <p>{profile.bio}</p>
+      <div className="section-heading">
+        <div>
+          <p className="section-label">프로필</p>
+          <h2>{profile.name} 님의 프로필</h2>
+        </div>
+        <span className="status-badge">LIVE</span>
+      </div>
+
+      <p className="profile-bio">{profile.bio}</p>
       {primary && (
         <div className="primary-photo">
           <img src={primary.viewUrl} alt={primary.originalName} />
@@ -35,7 +42,10 @@ export default function ProfileWithPhotos({ userId }){
       )}
       <div className="photo-grid">
         {photos?.map(p=> (
-          <img key={p.photoId} src={p.viewUrl} alt={p.originalName} className={p.isPrimary? 'primary':''} />
+          <figure key={p.photoId} className={p.isPrimary ? 'photo-card primary' : 'photo-card'}>
+            <img src={p.viewUrl} alt={p.originalName} />
+            <figcaption>{p.originalName}</figcaption>
+          </figure>
         ))}
       </div>
     </section>

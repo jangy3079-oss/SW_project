@@ -6,7 +6,21 @@ import TinderHome from './components/TinderHome'
 
 export default function App(){
   const userId = 1
-  const [step, setStep] = useState(1)
+  const onboardingKey = `donga-dating:onboarding-complete:${userId}`
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => window.localStorage.getItem(onboardingKey) === 'true')
+  const [step, setStep] = useState(hasCompletedOnboarding ? 3 : 1)
+
+  const completeOnboarding = () => {
+    window.localStorage.setItem(onboardingKey, 'true')
+    setHasCompletedOnboarding(true)
+    setStep(3)
+  }
+
+  const reopenOnboarding = () => {
+    window.localStorage.removeItem(onboardingKey)
+    setHasCompletedOnboarding(false)
+    setStep(1)
+  }
 
   const goBack = () => {
     if (step > 1) {
@@ -23,7 +37,7 @@ export default function App(){
   }
 
   return (
-    step < 3 ? (
+    !hasCompletedOnboarding ? (
       <div className="app-shell onboarding-shell">
         <header className="hero onboarding-hero">
           <div>
@@ -74,13 +88,13 @@ export default function App(){
             </>
           ) : (
             <section className="panel panel-preferences panel-wide">
-              <PreferencesForm userId={userId} onSaved={() => setStep(3)} />
+              <PreferencesForm userId={userId} onSaved={completeOnboarding} />
             </section>
           )}
         </main>
       </div>
     ) : (
-      <TinderHome userId={userId} onOpenSetup={() => setStep(2)} />
+      <TinderHome userId={userId} onOpenSetup={reopenOnboarding} />
     )
   )
 }

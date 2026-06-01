@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import ProfileWithPhotos from './ProfileWithPhotos'
-import PhotoUpload from './PhotoUpload'
-import PreferencesForm from './PreferencesForm'
 
 function unwrapApiResponse(payload) {
   if (!payload) return null
@@ -12,7 +10,7 @@ function unwrapApiResponse(payload) {
   return payload.data ?? payload
 }
 
-export default function AccountDrawer({ userId, onClose }) {
+export default function AccountDrawer({ userId, onClose, onOpenSetup }) {
   const [profile, setProfile] = useState(null)
   const [bio, setBio] = useState('')
   const [savingBio, setSavingBio] = useState(false)
@@ -121,11 +119,21 @@ export default function AccountDrawer({ userId, onClose }) {
               </div>
             </div>
             <ProfileWithPhotos userId={userId} />
-            <PhotoUpload userId={userId} />
           </div>
 
           <div className="drawer-section">
-            <PreferencesForm userId={userId} />
+            <div className="section-heading compact">
+              <div>
+                <p className="section-label">온보딩</p>
+                <h3>사진/취향 다시 열기</h3>
+              </div>
+            </div>
+            <p className="profile-bio">사진 등록과 취향 설정은 회원가입 직후에만 기본 노출됩니다. 필요하면 다시 열 수 있습니다.</p>
+            <div className="next-action">
+              <button type="button" className="primary-button" onClick={onOpenSetup}>
+                온보딩 다시 열기
+              </button>
+            </div>
           </div>
 
           {message && <div className="msg">{message}</div>}

@@ -316,7 +316,7 @@ export default function TinderHome({ userId, onOpenSetup }) {
       {drawerOpen && (
         <div className="drawer-backdrop" role="presentation" onClick={() => setDrawerOpen(false)}>
           <div className="drawer-shell" onClick={(event) => event.stopPropagation()}>
-            <AccountDrawer userId={userId} onClose={() => setDrawerOpen(false)} />
+            <AccountDrawer userId={userId} onClose={() => setDrawerOpen(false)} onOpenSetup={onOpenSetup} />
           </div>
         </div>
       )}

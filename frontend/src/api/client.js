@@ -57,6 +57,35 @@ export const matching = {
   history:      (userId) => request('GET',    '/api/matching/history', null, { userId }),
 };
 
+// ── Timetable ─────────────────────────────────
+export const timetable = {
+  status:   (userId) => request('GET', `/api/users/${userId}/timetable/status`),
+  getSlots: (userId) => request('GET', `/api/users/${userId}/timetable`),
+  upload: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('accessToken');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`/api/users/${userId}/timetable`, {
+      method: 'POST', headers, body: formData,
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { message: text }; }
+    if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    return data?.data ?? data;
+  },
+};
+
+// ── FreeTime Matching ─────────────────────────
+export const freeTime = {
+  pending: (userId)              => request('GET',  '/api/matching/freetime/pending', null, { userId }),
+  accept:  (requestId, userId)   => request('POST', `/api/matching/freetime/${requestId}/accept`, null, { userId }),
+  reject:  (requestId, userId)   => request('POST', `/api/matching/freetime/${requestId}/reject`, null, { userId }),
+  testRun: ()                    => request('POST', '/api/matching/freetime/test/run'),
+};
+
 // ── Evaluation ────────────────────────────────
 export const evaluation = {
   submit: (matchId, evaluatorId, score) =>

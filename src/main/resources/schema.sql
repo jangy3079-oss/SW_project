@@ -350,7 +350,36 @@ DELIMITER ;
 
 
 -- =====================================================
--- 13. 공강시간 (에브리타임 시간표 분석 결과)
+-- 13. 공강 매칭 요청
+--     · 자정 스케줄러가 다음날 공강 겹치는 남녀 쌍을 여기에 생성
+--     · 양쪽 수락 시 matches 테이블에 ACTIVE 매칭 생성
+--     · 거절/만료 시 REJECTED/EXPIRED 처리
+-- =====================================================
+CREATE TABLE free_time_requests (
+    request_id     BIGINT    NOT NULL AUTO_INCREMENT,
+    male_user_id   BIGINT    NOT NULL,
+    female_user_id BIGINT    NOT NULL,
+    matched_date   DATE      NOT NULL COMMENT '매칭 대상 날짜',
+    overlap_start  TIME      NOT NULL COMMENT '겹치는 공강 시작',
+    overlap_end    TIME      NOT NULL COMMENT '겹치는 공강 종료',
+    status         ENUM('PENDING','ACCEPTED','REJECTED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+    match_id       BIGINT    NULL COMMENT '수락 시 생성된 매칭 ID (NULL=미생성)',
+    expires_at     TIMESTAMP NOT NULL COMMENT '수락 마감 시각 (당일 23:59:59)',
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (request_id),
+    CONSTRAINT fk_freq_male   FOREIGN KEY (male_user_id)   REFERENCES users(user_id),
+    CONSTRAINT fk_freq_female FOREIGN KEY (female_user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_freq_match  FOREIGN KEY (match_id)       REFERENCES matches(match_id),
+    -- 같은 날짜에 동일 남녀 쌍 중복 방지
+    UNIQUE KEY uq_freq_pair_date (male_user_id, female_user_id, matched_date),
+    INDEX idx_freq_male   (male_user_id,   status),
+    INDEX idx_freq_female (female_user_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 14. 공강시간 (에브리타임 시간표 분석 결과)
 --     · 사용자가 시간표 이미지를 업로드하면 FastAPI 분석 후 저장
 --     · 업로드마다 기존 데이터 전체 교체 (upsert 불필요)
 -- =====================================================

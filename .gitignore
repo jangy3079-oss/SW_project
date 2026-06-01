@@ -19,6 +19,21 @@ src/main/resources/application-secret.yml
 .DS_Store
 Thumbs.db
 
+# IDE / 로컬 설정
+.metadata/
+.vscode/
+bin/
+out/
+
+# 로그 / 테스트 임시파일
+boot.log
+test-data.sql
+matching-test.html
+
+# Python 캐시
+__pycache__/
+*.pyc
+
 # 시간표 분석 테스트 이미지 (커밋 제외)
 KakaoTalk_Photo_*.jpeg
 KakaoTalk_Photo_*.jpg

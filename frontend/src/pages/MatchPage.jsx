@@ -42,8 +42,7 @@ export default function MatchPage() {
           icon="☕" bg="#D4F5EC" color="#00B894"
           title="공강 친구 매칭"
           desc="공강 시간이 맞는 친구 찾기"
-          badge="준비 중"
-          disabled
+          onClick={() => navigate('/match/freetime')}
         />
 
         {/* 매칭 이력 */}

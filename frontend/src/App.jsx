@@ -14,6 +14,7 @@ import EvaluationPage      from './pages/EvaluationPage';
 import ChatRoomListPage    from './pages/ChatRoomListPage';
 import ChatPage            from './pages/ChatPage';
 import MyPage              from './pages/MyPage';
+import FreeTimeMatchingPage from './pages/FreeTimeMatchingPage';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/chat" element={<ProtectedRoute><ChatRoomListPage /></ProtectedRoute>} />
             <Route path="/chat/:matchId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
             <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
+            <Route path="/match/freetime" element={<ProtectedRoute><FreeTimeMatchingPage /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

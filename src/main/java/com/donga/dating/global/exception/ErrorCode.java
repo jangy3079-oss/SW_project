@@ -35,6 +35,9 @@ public enum ErrorCode {
     QUEUE_NOT_FOUND(HttpStatus.NOT_FOUND, "대기열을 찾을 수 없습니다."),
     MATCH_NOT_FOUND(HttpStatus.NOT_FOUND, "매칭을 찾을 수 없습니다."),
     MATCH_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 매칭입니다."),
+    MATCH_NOT_PENDING(HttpStatus.BAD_REQUEST, "수락/거절 대기 중인 매칭이 아닙니다."),
+    MATCH_NOT_PARTICIPANT(HttpStatus.FORBIDDEN, "해당 매칭의 참여자가 아닙니다."),
+    TIMETABLE_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "공강 시간표를 먼저 등록해야 합니다."),
 
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),

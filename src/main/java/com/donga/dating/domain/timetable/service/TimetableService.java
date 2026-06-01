@@ -66,6 +66,13 @@ public class TimetableService {
         return new FreeTimeSlotDto.WeeklyResponse(slots);
     }
 
+    // ── 시간표 등록 여부 확인 ──────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public boolean isRegistered(Long userId) {
+        return freeTimeSlotRepository.existsByUserUserId(userId);
+    }
+
     // ── 공강시간 조회 ─────────────────────────────────────────────
 
     @Transactional(readOnly = true)

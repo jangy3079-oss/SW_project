@@ -45,4 +45,16 @@ public class TimetableController {
         FreeTimeSlotDto.WeeklyResponse result = timetableService.getFreeSlots(userId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+
+    /**
+     * 시간표 등록 여부 확인
+     * 프론트에서 공강 매칭 버튼 클릭 시 최초 1회 확인용
+     */
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<FreeTimeSlotDto.StatusResponse>> getTimetableStatus(
+            @PathVariable Long userId) {
+
+        boolean registered = timetableService.isRegistered(userId);
+        return ResponseEntity.ok(ApiResponse.success(new FreeTimeSlotDto.StatusResponse(registered)));
+    }
 }

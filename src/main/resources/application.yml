@@ -1,15 +1,18 @@
 spring:
+  config:
+    import: optional:classpath:application-secret.yml   # 로컬 비밀번호 오버라이드 (gitignore)
+
   datasource:
     url: jdbc:mysql://localhost:3306/donga_dating?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root          # TODO: 실제 DB 계정으로 변경
-    password: 1234     # TODO: 각자 로컬 비밀번호로 변경 (절대 커밋 금지)
+    password: your_password     # TODO: 각자 로컬 비밀번호로 변경 (절대 커밋 금지)
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   mail:
     host: smtp.gmail.com
     port: 587
-    username: iriru0818@gmail.com   # TODO: 본인 Gmail 주소로 변경
-    password: ocrf xsyr fnwh znjq             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
+    username: your_gmail@gmail.com   # TODO: 본인 Gmail 주소로 변경
+    password: your_app_password             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
     properties:
       mail:
         smtp:
@@ -57,5 +60,5 @@ timetable:
 # JWT 설정
 jwt:
   secret: my-super-secret-key-1234567890-abcdefghijkl
-  access-token-validity: 900000      # 15분 (밀리초)
+  access-token-validity: 86400000     # 24시간 (개발용 — 배포 전 900000으로 복원)
   refresh-token-validity: 1209600000 # 2주 (밀리초)

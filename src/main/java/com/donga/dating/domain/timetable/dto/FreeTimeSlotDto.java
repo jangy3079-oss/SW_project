@@ -26,6 +26,16 @@ public class FreeTimeSlotDto {
         }
     }
 
+    // ── 시간표 등록 여부 응답 ───────────────────────
+    @Getter
+    public static class StatusResponse {
+        private final boolean registered;
+
+        public StatusResponse(boolean registered) {
+            this.registered = registered;
+        }
+    }
+
     // ── 요일별로 그룹핑한 공강 응답 ─────────────────
     @Getter
     public static class WeeklyResponse {

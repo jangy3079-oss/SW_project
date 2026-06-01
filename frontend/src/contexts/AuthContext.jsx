@@ -19,12 +19,28 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await authApi.login(email, password);
+    // 토큰 먼저 저장 (이후 API 호출에 사용됨)
     localStorage.setItem('accessToken',  data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
 
-    // 이메일로 유저 정보 임시 저장 (userId는 서버 응답에서)
-    const info = { email: data.email, name: data.name };
-    // userId를 별도로 가져와야 하면 추후 /api/users/me 엔드포인트로 확장
+    // 기본 정보 저장
+    let info = {
+      userId:   data.userId,
+      email:    data.email,
+      name:     data.name,
+      gender:   data.gender ?? null,
+      rankTier: data.rankTier ?? 'BRONZE',
+    };
+
+    // 로그인 응답에 gender 없으면 프로필 API로 추가 조회
+    if (!info.gender && data.userId) {
+      try {
+        const profile = await userApi.get(data.userId);
+        info.gender   = profile.gender   ?? null;
+        info.rankTier = profile.rankTier ?? info.rankTier;
+      } catch {}
+    }
+
     localStorage.setItem('userInfo', JSON.stringify(info));
     setUserInfo(info);
     return data;

@@ -101,7 +101,10 @@ export default function MyPage() {
               <InfoRow label="학번" value={profile?.studentId || '-'} />
               <InfoRow label="학과" value={profile?.department || '-'} />
               <InfoRow label="학년" value={profile?.grade ? `${profile.grade}학년` : '-'} />
-              <InfoRow label="성별" value={profile?.gender === 'MALE' ? '남성' : '여성'} />
+              <InfoRow label="성별" value={
+                (profile?.gender || userInfo?.gender) === 'MALE' ? '남성' :
+                (profile?.gender || userInfo?.gender) === 'FEMALE' ? '여성' : '-'
+              } />
             </div>
 
             {/* 자기소개 */}

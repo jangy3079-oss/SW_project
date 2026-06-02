@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/auth/login", "/auth/refresh",
+                                "/api/*",
                                 "/api/users/register",
                                 "/api/users/verify",        // 이메일 인증 링크 (인증 없이 접근 필요)
                                 "/api/users/resend-token",  // 인증 메일 재발송

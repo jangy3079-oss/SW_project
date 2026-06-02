@@ -9,7 +9,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: iriru0818@gmail.com   # TODO: 본인 Gmail 주소로 변경
-    password: ocrf xsyr fnwh znjq             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
+    password: pniu ocuh iuks llxc             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
     properties:
       mail:
         smtp:

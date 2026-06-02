@@ -1,0 +1,61 @@
+### 1. 일반 매칭 대기열 등록
+POST http://localhost:8080/api/matching/general/enter?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+---
+###
+POST http://localhost:8080/api/matching/general/enter?userId=2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODgwQGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDM2MjgsImV4cCI6MTc3OTg0NDUyOH0.8E2uLIBsbwy1CBgeu_t-ulSemHN1iDIAg-7Yxsls_kM
+---
+### 2. 일반 매칭 대기 취소
+DELETE http://localhost:8080/api/matching/general/cancel?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+---
+
+### 3. 랭크 매칭 대기열 등록
+POST http://localhost:8080/api/matching/rank/enter?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+---
+
+### 4. 랭크 매칭 대기 취소
+DELETE http://localhost:8080/api/matching/rank/cancel?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+---
+
+### 5. 공강 매칭 대기열 등록
+POST http://localhost:8080/api/matching/lecture/enter?userId=10&lectureDay=MONDAY&lectureStartTime=09:00&lectureEndTime=11:00
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+---
+
+### 6. 공강 매칭 대기 취소
+DELETE http://localhost:8080/api/matching/lecture/cancel?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+---
+
+### 7. 현재 활성 매칭 조회
+GET http://localhost:8080/api/matching/active?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+---
+
+### 8. 매칭 히스토리 조회
+GET http://localhost:8080/api/matching/history?userId=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+---
+
+### 9. 매칭 리롤
+POST http://localhost:8080/api/matching/reroll?userId=10&matchType=RANK
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+
+### 10. 하트
+POST http://localhost:8080/api/likes/send?senderId=1&receiverId=2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODc5QGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDMxNzksImV4cCI6MTc3OTg0NDA3OX0.7udtDZqXlNlfiYqj9rYOSHZD7IE47qXuDQaRJpvxDi4
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/likes/accept?likeId=2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjQyODgwQGRvbmdhLmFjLmtyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3Nzk4NDM2MjgsImV4cCI6MTc3OTg0NDUyOH0.8E2uLIBsbwy1CBgeu_t-ulSemHN1iDIAg-7Yxsls_kM
+Content-Type: application/json

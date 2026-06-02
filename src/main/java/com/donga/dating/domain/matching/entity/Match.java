@@ -50,19 +50,21 @@ public class Match {
 
     public void expire() {
         this.status = MatchStatus.EXPIRED;
-    }
+    }          // 시간 초과로 자동 종료
 
     public void evaluate() {
         this.status = MatchStatus.EVALUATED;
-    }
+    }      // 유저가 평가를 완료한 종료
+
+    public void cancel() { this.status = MatchStatus.CANCELLED; }        // 유저의 리롤로 중도 취소
 
     // ── Enum ─────────────────────────────────────
 
     public enum MatchType {
-        GENERAL, RANK
+        GENERAL, RANK, LECTURE
     }
 
     public enum MatchStatus {
-        ACTIVE, EVALUATED, EXPIRED
+        ACTIVE, EVALUATED, EXPIRED, CANCELLED
     }
 }

@@ -45,24 +45,6 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────
--- 2. 이메일 인증 (로그인 담당자용) (사용 x
--- ──────────────────────────────────────────
-/*
-CREATE TABLE email_verifications (
-    verification_id BIGINT       NOT NULL AUTO_INCREMENT,
-    email           VARCHAR(100) NOT NULL,
-    token           VARCHAR(100) NOT NULL COMMENT 'UUID 인증 토큰',
-    is_verified     BOOLEAN      NOT NULL DEFAULT FALSE,
-    expires_at      TIMESTAMP    NOT NULL,
-    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (verification_id),
-    INDEX idx_token (token),
-    INDEX idx_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-*/
-
--- ──────────────────────────────────────────
 -- 2. 이메일 인증 토큰 (VerificationToken 엔티티 기반)
 -- ──────────────────────────────────────────
 CREATE TABLE verification_tokens (
@@ -104,16 +86,20 @@ CREATE TABLE user_photos (
 CREATE TABLE match_queue (
     queue_id      BIGINT          NOT NULL AUTO_INCREMENT,
     user_id       BIGINT          NOT NULL,
-    match_type    ENUM('GENERAL','RANK') NOT NULL,
+    match_type    ENUM('GENERAL','RANK','LECTURE') NOT NULL,
     status        ENUM('WAITING','MATCHED','CANCELLED') NOT NULL DEFAULT 'WAITING',
+    lecture_day        ENUM('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY') NULL COMMENT '공강 요일',
+    lecture_start_time TIME NULL COMMENT '공강 시작 시간',
+    lecture_end_time   TIME NULL COMMENT '공강 종료 시간',
     entered_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     PRIMARY KEY (queue_id),
     CONSTRAINT fk_queue_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     -- 동시에 같은 타입으로 중복 대기 방지
-    UNIQUE KEY uq_user_type_waiting (user_id, match_type, status),
-    INDEX idx_queue_status (match_type, status, entered_at)
+    UNIQUE KEY uq_user_type_waiting (user_id, match_type),
+    INDEX idx_queue_status (match_type, status, entered_at),
+    INDEX idx_lecture (lecture_day, lecture_start_time, lecture_end_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────
@@ -125,8 +111,8 @@ CREATE TABLE matches (
     match_id        BIGINT    NOT NULL AUTO_INCREMENT,
     male_user_id    BIGINT    NOT NULL,
     female_user_id  BIGINT    NOT NULL,
-    match_type      ENUM('GENERAL','RANK') NOT NULL,
-    status          ENUM('ACTIVE','EVALUATED','EXPIRED') NOT NULL DEFAULT 'ACTIVE',
+    match_type      ENUM('GENERAL','RANK', 'LECTURE') NOT NULL,
+    status          ENUM('ACTIVE','EVALUATED','EXPIRED','CANCELED') NOT NULL DEFAULT 'ACTIVE',
     matched_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at      TIMESTAMP NOT NULL COMMENT '매칭 평가 마감 시각',
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -347,3 +333,24 @@ DELIMITER ;
                             UNIQUE KEY uq_block_pair (blocker_id, blocked_id)
 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+    -- =====================================================
+-- 13. 사용자 좋아요 기능
+--     ·
+--     ·
+-- =====================================================
+    CREATE TABLE likes (
+                           like_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                           sender_id BIGINT NOT NULL,
+                           receiver_id BIGINT NOT NULL,
+                           status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           CONSTRAINT fk_like_sender FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                           CONSTRAINT fk_like_receiver FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                           CONSTRAINT uq_sender_receiver UNIQUE (sender_id, receiver_id),
+                           CONSTRAINT chk_status CHECK (status IN ('PENDING','ACCEPTED','REJECTED'))
+    );
+
+    CREATE INDEX idx_likes_sender ON likes(sender_id);
+    CREATE INDEX idx_likes_receiver ON likes(receiver_id);
+    CREATE INDEX idx_likes_status ON likes(status);

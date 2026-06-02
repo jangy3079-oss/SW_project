@@ -38,7 +38,12 @@ public enum ErrorCode {
 
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
-    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다.");
+    INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
+
+    // 하트
+    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요(하트)를 찾을 수 없습니다."),
+    ALREADY_SENT_HEART(HttpStatus.CONFLICT, "이미 해당 사용자에게 하트를 보냈습니다."),
+    LIKE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 하트입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

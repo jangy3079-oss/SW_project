@@ -12,27 +12,32 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MatchingService {
 
-    private static final int MATCH_VALID_HOURS = 48;   // 매칭 평가 유효 기간
-
     private final MatchRepository matchRepository;
     private final MatchQueueRepository queueRepository;
     private final UserRepository userRepository;
 
-    /**
-     * 매칭 대기열 등록.
-     * 반대 성별 대기자가 있으면 즉시 매칭, 없으면 대기.
-     */
+    /** 일반 매칭 큐 등록 */
     @Transactional
-    public Optional<Match> enterQueue(Long userId, Match.MatchType matchType) {
+    public void enterQueue(Long userId, com.donga.dating.domain.matching.entity.Match.MatchType matchType) {
+        enterQueue(userId, matchType, null, null, null);
+    }
+
+    /** 공강 매칭 큐 등록 */
+    @Transactional
+    public void enterQueue(Long userId,
+                           com.donga.dating.domain.matching.entity.Match.MatchType matchType,
+                           DayOfWeek lectureDay,
+                           LocalTime lectureStartTime,
+                           LocalTime lectureEndTime) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -40,41 +45,31 @@ public class MatchingService {
         queueRepository.findByUser_UserIdAndMatchTypeAndStatus(userId, matchType, MatchQueue.QueueStatus.WAITING)
                 .ifPresent(q -> { throw new CustomException(ErrorCode.ALREADY_IN_QUEUE); });
 
-        User.Gender oppositeGender = (user.getGender() == User.Gender.MALE)
-                ? User.Gender.FEMALE : User.Gender.MALE;
-
-        List<MatchQueue> waitingOpposites = queueRepository
-                .findByMatchTypeAndStatusAndUser_GenderOrderByEnteredAtAsc(
-                        matchType, MatchQueue.QueueStatus.WAITING, oppositeGender);
-
-        // 랭크 매칭: 동일 tier 우선, 인접 tier 허용
-        if (matchType == Match.MatchType.RANK) {
-            waitingOpposites = filterByRankTier(user, waitingOpposites);
-        }
-
-        if (!waitingOpposites.isEmpty()) {
-            MatchQueue opponent = waitingOpposites.get(0);
-            return Optional.of(createMatch(user, opponent.getUser(), matchType, opponent));
-        }
-
-        // 대기열 등록
+        // 대기열 등록 (매칭은 하지 않음)
         MatchQueue queue = MatchQueue.builder()
                 .user(user)
                 .matchType(matchType)
+                .lectureDay(lectureDay)
+                .lectureStartTime(lectureStartTime)
+                .lectureEndTime(lectureEndTime)
                 .build();
         queueRepository.save(queue);
-        return Optional.empty();
     }
 
-    /**
-     * 대기열 취소.
-     */
+    /** 대기열 취소 */
     @Transactional
-    public void cancelQueue(Long userId, Match.MatchType matchType) {
+    public void cancelQueue(Long userId, com.donga.dating.domain.matching.entity.Match.MatchType matchType) {
         MatchQueue queue = queueRepository
                 .findByUser_UserIdAndMatchTypeAndStatus(userId, matchType, MatchQueue.QueueStatus.WAITING)
                 .orElseThrow(() -> new CustomException(ErrorCode.QUEUE_NOT_FOUND));
         queue.cancel();
+    }
+
+    /** 후보군 조회 */
+    public List<MatchQueue> getWaitingOpposites(com.donga.dating.domain.matching.entity.Match.MatchType matchType,
+                                                User.Gender gender) {
+        return queueRepository.findByMatchTypeAndStatusAndUser_GenderOrderByEnteredAtAsc(
+                matchType, MatchQueue.QueueStatus.WAITING, gender);
     }
 
     public List<Match> getActiveMatches(Long userId) {
@@ -85,32 +80,4 @@ public class MatchingService {
         return matchRepository.findMatchHistoryByUserId(userId);
     }
 
-    // ── private ─────────────────────────────────
-
-    private Match createMatch(User requester, User opponent,
-                               Match.MatchType matchType, MatchQueue opponentQueue) {
-        User male   = requester.getGender() == User.Gender.MALE ? requester : opponent;
-        User female = requester.getGender() == User.Gender.FEMALE ? requester : opponent;
-
-        opponentQueue.matched();
-
-        return matchRepository.save(Match.builder()
-                .maleUser(male)
-                .femaleUser(female)
-                .matchType(matchType)
-                .expiresAt(LocalDateTime.now().plusHours(MATCH_VALID_HOURS))
-                .build());
-    }
-
-    private List<MatchQueue> filterByRankTier(User user, List<MatchQueue> candidates) {
-        User.RankTier myTier = user.getRankTier();
-        // 동일 tier → 인접 tier(상하 1단계) 순으로 필터
-        List<MatchQueue> same = candidates.stream()
-                .filter(q -> q.getUser().getRankTier() == myTier).toList();
-        if (!same.isEmpty()) return same;
-
-        return candidates.stream()
-                .filter(q -> Math.abs(q.getUser().getRankTier().ordinal() - myTier.ordinal()) <= 1)
-                .toList();
-    }
 }

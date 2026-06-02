@@ -9,17 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
 
-/**
- * [매칭 API]
- * POST   /api/matching/general/enter   - 일반 매칭 대기열 등록 (즉시 매칭 or 대기)
- * DELETE /api/matching/general/cancel  - 일반 매칭 대기 취소
- * POST   /api/matching/rank/enter      - 랭크 매칭 대기열 등록 (즉시 매칭 or 대기)
- * DELETE /api/matching/rank/cancel     - 랭크 매칭 대기 취소
- * GET    /api/matching/active          - 현재 활성 매칭 조회
- * GET    /api/matching/history         - 매칭 이력 조회
- */
 @RestController
 @RequestMapping("/api/matching")
 @RequiredArgsConstructor
@@ -30,9 +23,8 @@ public class MatchingController {
     /** 일반 매칭 대기열 등록 */
     @PostMapping("/general/enter")
     public ResponseEntity<ApiResponse<EnterQueueResponse>> enterGeneral(@RequestParam Long userId) {
-        return matchingService.enterQueue(userId, Match.MatchType.GENERAL)
-                .map(match -> ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.matched(match, userId))))
-                .orElseGet(() -> ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.queued(Match.MatchType.GENERAL))));
+        matchingService.enterQueue(userId, Match.MatchType.GENERAL);
+        return ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.queued(Match.MatchType.GENERAL)));
     }
 
     /** 일반 매칭 대기 취소 */
@@ -45,15 +37,33 @@ public class MatchingController {
     /** 랭크 매칭 대기열 등록 */
     @PostMapping("/rank/enter")
     public ResponseEntity<ApiResponse<EnterQueueResponse>> enterRank(@RequestParam Long userId) {
-        return matchingService.enterQueue(userId, Match.MatchType.RANK)
-                .map(match -> ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.matched(match, userId))))
-                .orElseGet(() -> ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.queued(Match.MatchType.RANK))));
+        matchingService.enterQueue(userId, Match.MatchType.RANK);
+        return ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.queued(Match.MatchType.RANK)));
     }
 
     /** 랭크 매칭 대기 취소 */
     @DeleteMapping("/rank/cancel")
     public ResponseEntity<ApiResponse<Void>> cancelRank(@RequestParam Long userId) {
         matchingService.cancelQueue(userId, Match.MatchType.RANK);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** 공강 매칭 대기열 등록 */
+    @PostMapping("/lecture/enter")
+    public ResponseEntity<ApiResponse<EnterQueueResponse>> enterLecture(
+            @RequestParam Long userId,
+            @RequestParam DayOfWeek lectureDay,
+            @RequestParam LocalTime lectureStartTime,
+            @RequestParam LocalTime lectureEndTime) {
+        matchingService.enterQueue(userId, Match.MatchType.LECTURE,
+                lectureDay, lectureStartTime, lectureEndTime);
+        return ResponseEntity.ok(ApiResponse.success(EnterQueueResponse.queued(Match.MatchType.LECTURE)));
+    }
+
+    /** 공강 매칭 대기 취소 */
+    @DeleteMapping("/lecture/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelLecture(@RequestParam Long userId) {
+        matchingService.cancelQueue(userId, Match.MatchType.LECTURE);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

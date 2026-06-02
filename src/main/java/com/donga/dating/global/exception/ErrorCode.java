@@ -20,6 +20,8 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "잘못된 토큰입니다."),
     TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "토큰이 만료되었습니다."),
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증된 계정입니다."),
+    PROFILE_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "프로필이 공개 상태가 아니어서 접근할 수 없습니다."),
+    INVALID_MATCH_CONDITION(HttpStatus.BAD_REQUEST, "매칭 조건이 충족되지 않습니다."),
 
 
     // 사진

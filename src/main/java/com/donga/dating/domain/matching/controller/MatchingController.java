@@ -4,6 +4,8 @@ import com.donga.dating.domain.matching.dto.EnterQueueResponse;
 import com.donga.dating.domain.matching.dto.MatchResponse;
 import com.donga.dating.domain.matching.entity.Match;
 import com.donga.dating.domain.matching.service.MatchingService;
+import com.donga.dating.domain.user.dto.UserProfileDto;
+import com.donga.dating.domain.user.entity.User;
 import com.donga.dating.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -86,4 +88,19 @@ public class MatchingController {
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+
+    @GetMapping("/lecture/candidates")
+    public ResponseEntity<ApiResponse<List<com.donga.dating.domain.user.dto.UserProfileDto>>> getLectureCandidates(
+            @RequestParam Long userId,
+            @RequestParam DayOfWeek lectureDay,
+            @RequestParam LocalTime lectureStartTime,
+            @RequestParam LocalTime lectureEndTime) {
+        List<com.donga.dating.domain.user.entity.User> users = matchingService.getLectureMatchCandidates(
+                userId, lectureDay, lectureStartTime, lectureEndTime);
+        List<com.donga.dating.domain.user.dto.UserProfileDto> result = users.stream()
+                .map(com.donga.dating.domain.user.dto.UserProfileDto::from)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
 }

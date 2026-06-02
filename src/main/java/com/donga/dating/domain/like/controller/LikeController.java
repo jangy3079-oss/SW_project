@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/likes")
 @RequiredArgsConstructor
@@ -35,5 +37,19 @@ public class LikeController {
     public ResponseEntity<ApiResponse<LikeResponse>> rejectHeart(@RequestParam Long likeId) {
         LikeResponse response = likeService.rejectHeart(likeId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /** 내가 받은 하트 목록 */
+    @GetMapping("/received")
+    public ResponseEntity<ApiResponse<List<LikeResponse>>> getReceivedHearts(@RequestParam Long userId) {
+        List<LikeResponse> result = likeService.getReceivedHearts(userId);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /** 내가 보낸 하트 목록 */
+    @GetMapping("/sent")
+    public ResponseEntity<ApiResponse<List<LikeResponse>>> getSentHearts(@RequestParam Long userId) {
+        List<LikeResponse> result = likeService.getSentHearts(userId);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

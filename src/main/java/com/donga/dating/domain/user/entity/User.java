@@ -66,6 +66,7 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
+    @Setter
     @Column(nullable = false)
     @Builder.Default
     private Boolean isActive = true;

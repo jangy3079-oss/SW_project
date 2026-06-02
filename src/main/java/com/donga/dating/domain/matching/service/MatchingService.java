@@ -80,4 +80,26 @@ public class MatchingService {
         return matchRepository.findMatchHistoryByUserId(userId);
     }
 
+    public List<User> getLectureMatchCandidates(Long userId,
+                                                DayOfWeek lectureDay,
+                                                LocalTime lectureStartTime,
+                                                LocalTime lectureEndTime) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User.Gender opposite = user.getGender() == User.Gender.MALE ? User.Gender.FEMALE : User.Gender.MALE;
+
+        List<MatchQueue> queues = queueRepository.findLectureCandidates(
+                Match.MatchType.LECTURE,
+                MatchQueue.QueueStatus.WAITING,
+                opposite,
+                lectureDay,
+                lectureStartTime,
+                lectureEndTime
+        );
+        return queues.stream()
+                .map(MatchQueue::getUser)
+                .filter(u -> !u.getUserId().equals(userId))
+                .distinct()
+                .toList();
+    }
 }

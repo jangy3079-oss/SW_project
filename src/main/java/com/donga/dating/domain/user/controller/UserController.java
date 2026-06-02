@@ -61,5 +61,10 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
-
+    @PatchMapping("/{userId}/active")
+    public ResponseEntity<ApiResponse<String>> updateActive(@PathVariable Long userId,
+                                                            @RequestParam Boolean isActive) {
+        userService.updateActive(userId, isActive);
+        return ResponseEntity.ok(ApiResponse.success("프로필 공개 상태가 변경되었습���다."));
+    }
 }

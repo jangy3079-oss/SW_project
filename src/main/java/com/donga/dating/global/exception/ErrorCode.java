@@ -20,6 +20,8 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "잘못된 토큰입니다."),
     TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "토큰이 만료되었습니다."),
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증된 계정입니다."),
+    PROFILE_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "프로필이 공개 상태가 아니어서 접근할 수 없습니다."),
+    INVALID_MATCH_CONDITION(HttpStatus.BAD_REQUEST, "매칭 조건이 충족되지 않습니다."),
 
 
     // 사진
@@ -45,7 +47,12 @@ public enum ErrorCode {
 
     // 시간표
     TIMETABLE_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "시간표 분석에 실패했습니다."),
-    TIMETABLE_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "시간표 분석 서버에 연결할 수 없습니다.");
+    TIMETABLE_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "시간표 분석 서버에 연결할 수 없습니다."),
+
+    // 하트
+    LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요(하트)를 찾을 수 없습니다."),
+    ALREADY_SENT_HEART(HttpStatus.CONFLICT, "이미 해당 사용자에게 하트를 보냈습니다."),
+    LIKE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 하트입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

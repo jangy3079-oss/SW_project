@@ -6,7 +6,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "match_queue")
@@ -32,6 +34,16 @@ public class MatchQueue {
     @Column(nullable = false)
     @Builder.Default
     private QueueStatus status = QueueStatus.WAITING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private DayOfWeek lectureDay;   // 공강 요일
+
+    @Column(nullable = true)
+    private LocalTime lectureStartTime;   // 공강 시작 시간
+
+    @Column(nullable = true)
+    private LocalTime lectureEndTime;     // 공강 종료 시간
 
     @CreationTimestamp
     private LocalDateTime enteredAt;

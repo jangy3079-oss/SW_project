@@ -19,4 +19,3 @@ Content-Type: application/json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlcjFAZG9uZ2EuYWMua3IiLCJpYXQiOjE3Nzg0ODE1NzUsImV4cCI6MTc3OTY5MTE3NX0.zJqKXWT0jnP-X85grIEVYYLHHw0d_mRNo0V-xYUBCWs"
 }
-

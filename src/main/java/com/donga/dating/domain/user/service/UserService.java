@@ -127,4 +127,12 @@ public class UserService {
         User user = getUser(userId);
         user.updateBio(bio);
     }
+
+    @Transactional
+    public void updateActive(Long userId, Boolean isActive) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        user.setIsActive(isActive);
+        userRepository.save(user);
+    }
 }

@@ -231,7 +231,7 @@ export default function HomePage() {
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 700, fontSize: 15 }}>{m.partnerName || '상대방'}</p>
                     <p style={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>
-                      {{ GENERAL: '일반 매칭', RANK: '랭크 매칭' }[m.matchType] || '공강 매칭'}
+                      {{ GENERAL: '공강 매칭', RANK: '랭크 매칭' }[m.matchType] || m.matchType}
                     </p>
                   </div>
                   <span style={{ fontSize: 20 }}>💬</span>
@@ -245,11 +245,6 @@ export default function HomePage() {
         <section style={{ marginBottom: 8 }}>
           <h3 style={{ ...s.secTitle, marginBottom: 10 }}>⚡ 지금 바로 매칭</h3>
           <div style={s.quickRow}>
-            <QuickBtn
-              icon="🎲" label="일반 매칭"
-              color="#FF6B9D" bg="#FFE8F0"
-              onClick={() => navigate('/match/waiting', { state: { type: 'GENERAL' } })}
-            />
             <QuickBtn
               icon="🏆" label="랭크 매칭"
               color="#6C5CE7" bg="#EEE9FF"

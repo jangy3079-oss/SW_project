@@ -41,10 +41,36 @@ export const auth = {
 
 // ── User ──────────────────────────────────────
 export const user = {
-  register: (body)   => request('POST', '/api/users/register', body),
-  verify:   (token)  => request('GET',  '/api/users/verify', null, { token }),
-  resend:   (email)  => request('POST', '/api/users/resend-token', null, { email }),
-  get:      (id)     => request('GET',  `/api/users/${id}`),
+  register:          (body)     => request('POST',  '/api/users/register', body),
+  verify:            (token)    => request('GET',   '/api/users/verify', null, { token }),
+  resend:            (email)    => request('POST',  '/api/users/resend-token', null, { email }),
+  get:               (id)       => request('GET',   `/api/users/${id}`),
+  updateProfile:     (id, body) => request('POST',  `/api/users/${id}/profile`, body),
+  updateBio:         (id, bio)  => request('PATCH', `/api/users/${id}/bio`, { bio }),
+  getPreferences:    (id)       => request('GET',   `/api/users/${id}/preferences`),
+  updatePreferences: (id, body) => request('PUT',   `/api/users/${id}/preferences`, body),
+};
+
+// ── Photo ─────────────────────────────────────
+export const photo = {
+  list:       (userId)          => request('GET',    `/api/users/${userId}/photos`),
+  setPrimary: (userId, photoId) => request('PATCH',  `/api/users/${userId}/photos/${photoId}/primary`),
+  delete:     (userId, photoId) => request('DELETE', `/api/users/${userId}/photos/${photoId}`),
+  upload: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('accessToken');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`/api/users/${userId}/photos`, {
+      method: 'POST', headers, body: formData,
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { message: text }; }
+    if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    return data?.data ?? data;
+  },
 };
 
 // ── Matching ──────────────────────────────────

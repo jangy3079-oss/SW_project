@@ -30,6 +30,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // Redis & Cache
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.integration:spring-integration-redis'
+    implementation 'redis.clients:jedis'
+
+    // Spring Batch (for gonggang matching batch job)
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+
     // DB
     runtimeOnly 'com.mysql:mysql-connector-j'
 

@@ -91,6 +91,27 @@ public class User {
         this.isActive = Boolean.FALSE;
     }
 
+    /**
+     * rankScore 업데이트 (평가 후 점수 갱신)
+     */
+    public void setRankScore(BigDecimal rankScore) {
+        this.rankScore = rankScore;
+    }
+
+    /**
+     * rankTier 업데이트 (점수 갱신 후 티어 변경)
+     */
+    public void setRankTier(RankTier rankTier) {
+        this.rankTier = rankTier;
+    }
+
+    /**
+     * evalCount 업데이트 (평가 건수)
+     */
+    public void setEvalCount(int evalCount) {
+        this.evalCount = evalCount;
+    }
+
     // ── Enum ─────────────────────────────────────
 
     public enum Gender {

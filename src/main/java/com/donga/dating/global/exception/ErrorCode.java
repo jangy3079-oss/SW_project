@@ -23,7 +23,6 @@ public enum ErrorCode {
     PROFILE_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "프로필이 공개 상태가 아니어서 접근할 수 없습니다."),
     INVALID_MATCH_CONDITION(HttpStatus.BAD_REQUEST, "매칭 조건이 충족되지 않습니다."),
 
-
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."),
     PHOTO_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "사진은 최대 5장까지 등록할 수 있습니다."),
@@ -41,12 +40,28 @@ public enum ErrorCode {
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
+    INVALID_EVALUATION_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
+    EVALUATION_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 평가를 제출했습니다."),
 
-    // 하트
+    // 하트/좋아요
     LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요(하트)를 찾을 수 없습니다."),
     ALREADY_SENT_HEART(HttpStatus.CONFLICT, "이미 해당 사용자에게 하트를 보냈습니다."),
-    LIKE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 하트입니다.");
+    LIKE_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 하트입니다."),
+    LIKE_NOT_MUTUAL_ACCEPTED(HttpStatus.BAD_REQUEST, "양측 모두 수락한 좋아요만 채팅방을 만들 수 있습니다."),
+
+    // 리롤
+    REROLL_COUNTER_NOT_FOUND(HttpStatus.NOT_FOUND, "리롤 카운터를 찾을 수 없습니다."),
+    REROLL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "리롤 횟수를 다 사용했습니다. 내일 다시 시도해주세요."),
+
+    // 랭크 매칭
+    RANK_MATCHING_TIMEOUT(HttpStatus.BAD_REQUEST, "랭크 매칭 대기 시간이 초과했습니다. (최대 5분)"),
+    CONCURRENT_REQUEST_FAILED(HttpStatus.BAD_REQUEST, "동시 요청으로 인한 실패입니다. 다시 시도해주세요."),
+
+    // 배치
+    BATCH_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배치 작업 실행에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
 }
+
+

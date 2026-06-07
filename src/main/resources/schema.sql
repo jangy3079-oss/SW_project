@@ -354,3 +354,73 @@ DELIMITER ;
     CREATE INDEX idx_likes_sender ON likes(sender_id);
     CREATE INDEX idx_likes_receiver ON likes(receiver_id);
     CREATE INDEX idx_likes_status ON likes(status);
+
+-- =====================================================
+-- 14. 매칭 노출 이력 (공강/일반 매칭에서 중복 노출 방지)
+--     · 최소 7일간 동일 사용자에게 같은 후보 재노출 차단
+-- =====================================================
+CREATE TABLE match_exposure_history (
+    exposure_id      BIGINT          NOT NULL AUTO_INCREMENT,
+    source_user_id   BIGINT          NOT NULL COMMENT '매칭 요청 보낸 사용자 (A)',
+    target_user_id   BIGINT          NOT NULL COMMENT '후보 대상 사용자 (B)',
+    match_type       ENUM('GENERAL','RANK','LECTURE') NOT NULL,
+    exposure_reason  ENUM('REJECTED','REROLL_PASS','EXPIRED') NOT NULL COMMENT '노출 제외 사유',
+    exposed_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at       TIMESTAMP       NOT NULL COMMENT 'CURRENT_TIMESTAMP + 7일',
+
+    PRIMARY KEY (exposure_id),
+    CONSTRAINT fk_exposure_source FOREIGN KEY (source_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_exposure_target FOREIGN KEY (target_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY uq_exposure_pair (source_user_id, target_user_id, match_type),
+    INDEX idx_exposure_expires (source_user_id, expires_at),
+    INDEX idx_exposure_target (target_user_id, expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 15. 남성 사용자 리롤 횟수 관리
+--     · 매일 자정에 초기화
+--     · 한 번 사용할 때마다 -1
+-- =====================================================
+CREATE TABLE reroll_counters (
+    counter_id       BIGINT          NOT NULL AUTO_INCREMENT,
+    user_id          BIGINT          NOT NULL COMMENT '남성 사용자만',
+    remaining_rerolls INT            NOT NULL DEFAULT 3,
+    reset_date       DATE            NOT NULL COMMENT '초기화 날짜 (자정 배치 실행 시)',
+    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (counter_id),
+    CONSTRAINT fk_reroll_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY uq_reroll_user (user_id),
+    INDEX idx_reroll_reset (reset_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 16. 랭크 매칭 수락/거절 처리력 (Like 상태 확장)
+--     · PENDING → ACCEPTED / REJECTED / EXPIRED / CANCELLED_BY_SENDER
+-- =====================================================
+ALTER TABLE likes
+MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+DROP CHECK chk_status,
+ADD CONSTRAINT chk_status_new CHECK (status IN (
+    'PENDING',
+    'ACCEPTED',
+    'REJECTED',
+    'EXPIRED',
+    'CANCELLED_BY_SENDER',
+    'AUTO_REJECTED'
+));
+
+-- 좋아요 만료 시간 추적
+ALTER TABLE likes
+ADD COLUMN expires_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR) COMMENT '24시간 후 만료',
+ADD INDEX idx_likes_expires (status, expires_at);
+
+-- =====================================================
+-- 17. 채팅방 추가 필드 (TTL 관리)
+-- =====================================================
+ALTER TABLE chat_rooms
+ADD COLUMN is_read_only BOOLEAN NOT NULL DEFAULT FALSE COMMENT '24시간 만료 후 읽기 전용',
+ADD COLUMN expires_at   TIMESTAMP NULL COMMENT 'Redis TTL 기반, 24시간 후 자동 종료',
+ADD COLUMN has_message  BOOLEAN NOT NULL DEFAULT FALSE COMMENT '대화 있음 여부 (유령 매칭 판단)',
+ADD INDEX idx_chat_expires (expires_at, status);
+

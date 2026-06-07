@@ -103,6 +103,14 @@ public class ChatService {
     }
 
     /**
+     * 매칭 성사 시 채팅방 생성 (이미 있으면 기존 채팅방 반환)
+     */
+    @Transactional
+    public ChatRoom createChatRoomForMatch(Match match) {
+        return getOrCreateChatRoom(match);
+    }
+
+    /**
      * 채팅방이 없으면 새로 만들고, 있으면 기존 채팅방 반환
      */
     private ChatRoom getOrCreateChatRoom(Match match) {

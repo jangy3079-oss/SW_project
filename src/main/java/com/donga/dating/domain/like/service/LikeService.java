@@ -1,5 +1,6 @@
 package com.donga.dating.domain.like.service;
 
+import com.donga.dating.domain.chat.service.ChatService;
 import com.donga.dating.domain.like.dto.LikeResponse;
 import com.donga.dating.domain.like.entity.Like;
 import com.donga.dating.domain.like.repository.LikeRepository;
@@ -26,6 +27,7 @@ public class LikeService {
     private final UserRepository userRepository;
     private final MatchRepository matchRepository;
     private final MatchQueueRepository queueRepository;
+    private final ChatService chatService;
 
     /** 하트 보내기 */
     @Transactional
@@ -98,6 +100,8 @@ public class LikeService {
                 .build();
 
         matchRepository.save(match);
+
+        chatService.createChatRoomForMatch(match);
 
         // 보낸 사람의 다른 PENDING 하트 자동 거절 (현재 수락한 likeId 제외)
         List<Like> otherSent = likeRepository.findBySender_UserIdAndStatus(sender.getUserId(), Like.Status.PENDING);

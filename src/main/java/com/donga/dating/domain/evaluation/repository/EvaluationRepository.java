@@ -25,23 +25,28 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     /**
      * 새 구현에 필요한 메서드
      */
-    Optional<Evaluation> findByEvaluatorIdAndEvaluatedId(Long evaluatorId, Long evaluatedId);
-
-    /**
-     * 사용자가 받은 평가의 평균 점수
-     */
-    @Query("SELECT AVG(CAST(e.score AS DOUBLE)) FROM Evaluation e WHERE e.evaluatedId = :evaluatedId")
+    @Query("SELECT AVG(CAST(e.score AS double)) FROM Evaluation e WHERE e.evaluated.userId = :evaluatedId")
     double getAverageScoreForUser(@Param("evaluatedId") Long evaluatedId);
 
     /**
      * 사용자가 받은 평가 건수
      */
-    long countByEvaluatedId(Long evaluatedId);
+    long countByEvaluated_UserId(Long evaluatedId);
+
+    Optional<Evaluation> findByEvaluator_UserIdAndEvaluated_UserId(Long evaluatorId, Long evaluatedId);
 
     /**
      * 호환 메서드
      */
+    default Optional<Evaluation> findByEvaluatorIdAndEvaluatedId(Long evaluatorId, Long evaluatedId) {
+        return findByEvaluator_UserIdAndEvaluated_UserId(evaluatorId, evaluatedId);
+    }
+
     default Optional<Evaluation> findByEvaluatorAndTarget(Long evaluatorId, Long evaluatedId) {
-        return findByEvaluatorIdAndEvaluatedId(evaluatorId, evaluatedId);
+        return findByEvaluator_UserIdAndEvaluated_UserId(evaluatorId, evaluatedId);
+    }
+
+    default long countByEvaluatedId(Long evaluatedId) {
+        return countByEvaluated_UserId(evaluatedId);
     }
 }

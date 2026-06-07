@@ -1,8 +1,10 @@
 package com.donga.dating.domain.matching.service;
 
+import com.donga.dating.domain.chat.service.ChatService;
 import com.donga.dating.domain.matching.entity.*;
 import com.donga.dating.domain.like.entity.Like;
 import com.donga.dating.domain.like.repository.LikeRepository;
+import com.donga.dating.domain.matching.repository.MatchRepository;
 import com.donga.dating.domain.user.entity.User;
 import com.donga.dating.domain.user.repository.UserRepository;
 import com.donga.dating.global.exception.CustomException;
@@ -40,6 +42,8 @@ public class RankMatchingService {
 
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final MatchRepository matchRepository;
+    private final ChatService chatService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final LockRegistry lockRegistry;
 
@@ -281,24 +285,105 @@ public class RankMatchingService {
      */
     @Transactional
     public void acceptRankMatching(Long userId, Long senderId) {
-        Like like = likeRepository.findBySenderIdAndReceiverId(senderId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
+        String lockKey = "accept-rank:" + Math.min(userId, senderId) + ":" + Math.max(userId, senderId);
+        Lock lock = lockRegistry.obtain(lockKey);
 
-        if (like.getStatus() != Like.Status.PENDING) {
-            throw new CustomException(ErrorCode.LIKE_ALREADY_PROCESSED);
+        if (!lock.tryLock()) {
+            throw new CustomException(ErrorCode.CONCURRENT_REQUEST_FAILED);
         }
 
-        like.accept();
-        likeRepository.save(like);
+        try {
+            Like like = likeRepository.findBySenderIdAndReceiverId(senderId, userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
 
-        // 상대방도 수락했는지 확인
-        Optional<Like> reverseLike = likeRepository.findBySenderIdAndReceiverId(userId, senderId);
-        if (reverseLike.isPresent() && reverseLike.get().getStatus() == Like.Status.ACCEPTED) {
-            // 양측 모두 수락 → 채팅방 개설 (ChatService에서 처리)
-            log.info("[랭크 매칭 수락] {} ↔ {} 양측 수락 완료", userId, senderId);
+            if (like.getStatus() != Like.Status.PENDING) {
+                throw new CustomException(ErrorCode.LIKE_ALREADY_PROCESSED);
+            }
+
+            like.accept();
+            likeRepository.save(like);
+
+            Optional<Like> reverseLike = likeRepository.findBySenderIdAndReceiverId(userId, senderId);
+            if (reverseLike.isPresent() && reverseLike.get().getStatus() == Like.Status.ACCEPTED) {
+                completeRankMatch(userId, senderId);
+            }
+
+            log.info("[랭크 매칭 수락] {} 수락", userId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 양측 수락 완료 시 Match 생성 및 채팅방 개설
+     */
+    private void completeRankMatch(Long userId1, Long userId2) {
+        User user1 = userRepository.findById(userId1)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findById(userId2)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!isProfileActive(user1) || !isProfileActive(user2)) {
+            throw new CustomException(ErrorCode.PROFILE_NOT_ACTIVE);
         }
 
-        log.info("[랭크 매칭 수락] {} 수락", userId);
+        if (hasActiveRankMatchBetween(userId1, userId2)) {
+            log.warn("[랭크 매칭] {} ↔ {} 기존 활성 매칭 존재 (중복 생성 방지)", userId1, userId2);
+            return;
+        }
+
+        User male = user1.getGender() == User.Gender.MALE ? user1 : user2;
+        User female = user1.getGender() == User.Gender.FEMALE ? user1 : user2;
+
+        Match match = Match.builder()
+                .maleUser(male)
+                .femaleUser(female)
+                .matchType(Match.MatchType.RANK)
+                .expiresAt(LocalDateTime.now().plusHours(48))
+                .build();
+
+        matchRepository.save(match);
+        chatService.createChatRoomForMatch(match);
+
+        rejectOtherPendingLikes(userId1, userId2);
+        rejectOtherPendingLikes(userId2, userId1);
+
+        exitRankQueue(userId1, user1.getGender());
+        exitRankQueue(userId2, user2.getGender());
+
+        clearRankAcceptanceTimeout(userId1, userId2);
+
+        log.info("[랭크 매칭 수락] {} ↔ {} 양측 수락 완료, matchId={}", userId1, userId2, match.getMatchId());
+    }
+
+    private boolean isProfileActive(User user) {
+        return user.getIsActive() != null && user.getIsActive();
+    }
+
+    private boolean hasActiveRankMatchBetween(Long userId1, Long userId2) {
+        return matchRepository.findActiveMatchesByUserId(userId1).stream()
+                .anyMatch(match -> match.getMatchType() == Match.MatchType.RANK
+                        && isPartner(match, userId2));
+    }
+
+    private boolean isPartner(Match match, Long userId) {
+        return match.getMaleUser().getUserId().equals(userId)
+                || match.getFemaleUser().getUserId().equals(userId);
+    }
+
+    private void rejectOtherPendingLikes(Long userId, Long partnerId) {
+        likeRepository.findBySender_UserIdAndStatus(userId, Like.Status.PENDING).stream()
+                .filter(like -> !partnerId.equals(like.getReceiverId()))
+                .forEach(Like::reject);
+
+        likeRepository.findByReceiver_UserIdAndStatus(userId, Like.Status.PENDING).stream()
+                .filter(like -> !partnerId.equals(like.getSenderId()))
+                .forEach(Like::reject);
+    }
+
+    private void clearRankAcceptanceTimeout(Long userId1, Long userId2) {
+        redisTemplate.delete("rank:acceptance:" + userId1 + ":" + userId2);
+        redisTemplate.delete("rank:acceptance:" + userId2 + ":" + userId1);
     }
 
     /**

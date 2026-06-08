@@ -1,5 +1,6 @@
 package com.donga.dating.domain.user.controller;
 
+import com.donga.dating.domain.user.dto.PreferenceDtos;
 import com.donga.dating.domain.user.dto.RegisterRequest;
 import com.donga.dating.domain.user.entity.User;
 import com.donga.dating.domain.user.service.UserService;
@@ -67,4 +68,17 @@ public class UserController {
         userService.updateActive(userId, isActive);
         return ResponseEntity.ok(ApiResponse.success("프로필 공개 상태가 변경되었습���다."));
     }
+
+    @GetMapping("/{userId}/preferences")
+    public ResponseEntity<ApiResponse<PreferenceDtos.PreferencesResponse>> getPreferences(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getPreferences(userId)));
+    }
+
+    @PutMapping("/{userId}/preferences")
+    public ResponseEntity<ApiResponse<String>> updatePreferences(@PathVariable Long userId,
+                                                                 @RequestBody PreferenceDtos.PreferencesUpdateRequest request) {
+        userService.updatePreferences(userId, request);
+        return ResponseEntity.ok(ApiResponse.success("선호도가 업데이트되었습니다."));
+    }
+
 }

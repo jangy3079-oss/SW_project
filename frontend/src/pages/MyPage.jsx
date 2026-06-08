@@ -150,11 +150,11 @@ export default function MyPage() {
             {/* ── 프로필 관리 메뉴 ── */}
             <Card style={{ margin: '12px 16px 0' }}>
               <MenuItem icon="📷" label="프로필 사진 변경"  sub="내 매력을 보여주세요"
-                onClick={() => fileInputRef.current?.click()} />
+                onClick={() => navigate('/mypage/edit')} />
               <Divider />
               <MenuItem icon="✏️" label="자기소개 수정"
                 sub={profile?.bio ? profile.bio.slice(0, 22) + (profile.bio.length > 22 ? '…' : '') : '나를 소개해 보세요'}
-                onClick={() => navigate('/mypage/edit-bio')} />
+                onClick={() => navigate('/mypage/edit')} />
               <Divider />
               <MenuItem icon="🎯" label="매칭 선호도 설정"  sub="원하는 매칭 조건을 정해보세요"
                 onClick={() => navigate('/mypage/preferences')} />

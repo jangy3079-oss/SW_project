@@ -1,17 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { freeTime, matching, timetable } from '../api/client';
+import { user as userApi, freeTime, matching, timetable } from '../api/client';
 import BottomTabBar from '../components/BottomTabBar';
 
-// ── 티어 스타일 ────────────────────────────────
+// ── 디자인 토큰 ───────────────────────────────
+const PRIMARY    = '#003087';
+const PRIMARY_BG = '#EAF0FB';
+
+// ── 티어 스타일 ───────────────────────────────
 const TIER_COLOR = {
-  BRONZE: '#8a5a1a', SILVER: '#555', GOLD: '#8a6a00',
-  PLATINUM: '#0a7a7a', DIAMOND: '#4a1aaa',
+  BRONZE:   '#8a5a1a', SILVER:  '#555',
+  GOLD:     '#8a6a00', PLATINUM:'#0a7a7a', DIAMOND: '#4a1aaa',
 };
 const TIER_BG = {
-  BRONZE: '#f5e0c3', SILVER: '#e8e8e8', GOLD: '#fff0c0',
-  PLATINUM: '#d0f0f0', DIAMOND: '#e0d4ff',
+  BRONZE:   '#f5e0c3', SILVER:  '#e8e8e8',
+  GOLD:     '#fff0c0', PLATINUM:'#d0f0f0', DIAMOND: '#e0d4ff',
 };
 const TIER_EMOJI = {
   BRONZE: '🥉', SILVER: '🥈', GOLD: '🥇', PLATINUM: '💎', DIAMOND: '✨',
@@ -28,14 +32,14 @@ function fmtTime(t) {
 
 // ── 메인 컴포넌트 ─────────────────────────────
 export default function HomePage() {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
   const { userInfo } = useAuth();
 
-  const [pending, setPending]     = useState([]);   // 공강 매칭 대기 요청
-  const [actives, setActives]     = useState([]);   // 활성 매칭
-  const [ttRegistered, setTtReg]  = useState(null); // 시간표 등록 여부 (null=로딩)
-  const [loading, setLoading]     = useState(true);
-  const [acting, setActing]       = useState({});   // { requestId: 'accept'|'reject' }
+  const [pending,      setPending]  = useState([]);
+  const [actives,      setActives]  = useState([]);
+  const [ttRegistered, setTtReg]   = useState(null);
+  const [loading,      setLoading]  = useState(true);
+  const [acting,       setActing]   = useState({});
 
   const userId = userInfo?.userId;
   const tier   = userInfo?.rankTier || 'BRONZE';
@@ -57,6 +61,14 @@ export default function HomePage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // 첫 로그인 감지: bio 없으면 프로필 설정 화면으로 이동
+  useEffect(() => {
+    if (!userId) return;
+    userApi.get(userId).then(p => {
+      if (!p?.bio) navigate('/profile/setup', { replace: true });
+    }).catch(() => {});
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── 수락 / 거절 ──────────────────────────────
   const handleAccept = async (req) => {
     setActing(p => ({ ...p, [req.requestId]: 'accept' }));
@@ -76,96 +88,102 @@ export default function HomePage() {
     finally { setActing(p => ({ ...p, [req.requestId]: null })); }
   };
 
-  const cur = pending[0] || null; // 현재 보여줄 공강 요청
+  const cur = pending[0] || null;
 
   // ── 렌더 ─────────────────────────────────────
   return (
-    <div className="app-shell">
+    <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
       <div style={s.page}>
 
-        {/* ── 헤더 ───────────────────────────── */}
+        {/* ── 헤더 ── */}
         <header style={s.header}>
-          <div style={s.logo}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={s.logoText}>공강</span>
-            <span style={{ fontSize: 22 }}>💕</span>
+            <span style={{ fontSize: 20 }}>💕</span>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button style={s.iconBtn}>🔔</button>
-            <div style={s.avatarBtn} onClick={() => navigate('/mypage')}>
+            <button style={s.avatarBtn} onClick={() => navigate('/mypage')}>
               {userInfo?.gender === 'MALE' ? '🧑' : '👧'}
-            </div>
+            </button>
           </div>
         </header>
 
-        {/* ── 인사 + 티어 ────────────────────── */}
+        {/* ── 인사 + 티어 ── */}
         <div style={s.greetRow}>
           <div>
-            <p style={{ fontSize: 13, color: 'var(--sub)' }}>안녕하세요 👋</p>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginTop: 2 }}>
+            <p style={{ fontSize: 13, color: '#888' }}>안녕하세요 👋</p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', marginTop: 3 }}>
               {userInfo?.name || '사용자'}님
             </h2>
           </div>
           <span style={{
-            ...s.tierTag,
-            background: TIER_BG[tier],
-            color: TIER_COLOR[tier],
+            padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+            background: TIER_BG[tier], color: TIER_COLOR[tier],
           }}>
             {TIER_EMOJI[tier]} {tier}
           </span>
         </div>
 
-        {/* ── 오늘의 공강 매칭 (히어로) ───────── */}
-        <section style={{ marginBottom: 8 }}>
+        {/* ────────────── 섹션 구분 ────────────── */}
+        <div style={s.divider} />
+
+        {/* ── 오늘의 공강 매칭 ── */}
+        <section style={s.section}>
           <div style={s.secRow}>
             <h3 style={s.secTitle}>☕ 오늘의 공강 매칭</h3>
             {pending.length > 1 && (
-              <span style={s.countTag}>{pending.length}건 대기 중</span>
+              <span style={s.countTag}>{pending.length}건 대기</span>
             )}
           </div>
 
           {loading ? (
-            <div style={s.centerCard}>
+            /* 로딩 */
+            <div style={s.stateCard}>
               <div className="spinner" style={{ margin: '0 auto' }} />
             </div>
 
           ) : ttRegistered === false ? (
-            /* 시간표 미등록 → 등록 유도 */
-            <div style={s.emptyCard} onClick={() => navigate('/match/freetime')}>
-              <span style={{ fontSize: 44 }}>🗓️</span>
-              <p style={{ fontWeight: 700, fontSize: 16, marginTop: 12 }}>
+            /* 시간표 미등록 */
+            <div style={s.stateCard} onClick={() => navigate('/match/freetime')}>
+              <span style={{ fontSize: 40 }}>🗓️</span>
+              <p style={{ fontWeight: 700, fontSize: 16, color: '#111', marginTop: 12 }}>
                 에브리타임 시간표를 등록해보세요!
               </p>
-              <p style={{ fontSize: 13, color: 'var(--sub)', marginTop: 6, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.6 }}>
                 공강 시간이 겹치는 이성과<br />자동으로 매칭돼요
               </p>
-              <div style={s.emptyBtn}>시간표 등록하기 →</div>
+              <div style={s.outlineBtn}>시간표 등록하기 →</div>
             </div>
 
           ) : cur ? (
             /* 공강 요청 히어로 카드 */
             <div style={s.heroCard}>
-              <div style={s.heroTop}>
+              {/* 상단: 상대 정보 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
                 <div style={s.partnerAvatar}>
-                  <span style={{ fontSize: 34 }}>
+                  <span style={{ fontSize: 32 }}>
                     {cur.partnerGender === 'MALE' ? '🧑' : '👧'}
                   </span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>새로운 공강 매칭</p>
-                  <p style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginTop: 3 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 3 }}>
+                    새로운 공강 매칭
+                  </p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
                     {cur.partnerName}
                   </p>
                 </div>
                 {pending.length > 1 && (
-                  <div style={s.moreBadge}>+{pending.length - 1}</div>
+                  <span style={s.moreBadge}>+{pending.length - 1}</span>
                 )}
               </div>
 
-              {/* 공강 시간 표시 */}
+              {/* 공강 시간 */}
               <div style={s.timeBox}>
                 <span style={{ fontSize: 18 }}>📅</span>
                 <div>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 3 }}>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 3 }}>
                     {cur.matchedDate} 공강시간
                   </p>
                   <p style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>
@@ -174,108 +192,128 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* 수락 / 다음 버튼 */}
-              <div style={s.btnRow}>
+              {/* 버튼 */}
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
-                  style={s.skipBtn}
+                  style={s.heroSkipBtn}
                   disabled={!!acting[cur.requestId]}
                   onClick={() => handleReject(cur)}
                 >
                   {acting[cur.requestId] === 'reject' ? '...' : '⟳ 다음'}
                 </button>
                 <button
-                  style={s.likeBtn}
+                  style={s.heroLikeBtn}
                   disabled={!!acting[cur.requestId]}
                   onClick={() => handleAccept(cur)}
                 >
                   {acting[cur.requestId] === 'accept' ? '...' : '💬 수락'}
                 </button>
               </div>
-              <p style={s.hint}>수락하면 채팅으로 연결돼요</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 12 }}>
+                수락하면 채팅으로 연결돼요
+              </p>
             </div>
 
           ) : (
             /* 대기 중 */
-            <div style={s.waitCard}>
-              <span style={{ fontSize: 40 }}>⏳</span>
-              <p style={{ fontWeight: 700, fontSize: 15, marginTop: 12 }}>공강 매칭 대기 중이에요</p>
-              <p style={{ fontSize: 13, color: 'var(--sub)', marginTop: 6 }}>
-                자정에 공강이 겹치는 이성과 자동으로 매칭돼요
+            <div style={s.stateCard}>
+              <span style={{ fontSize: 38 }}>⏳</span>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#111', marginTop: 12 }}>
+                공강 매칭 대기 중이에요
+              </p>
+              <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.6 }}>
+                자정에 공강이 겹치는 이성과<br />자동으로 매칭돼요
               </p>
             </div>
           )}
         </section>
 
-        {/* ── 진행 중인 매칭 ──────────────────── */}
+        {/* ────────────── 섹션 구분 ────────────── */}
+        {actives.length > 0 && <div style={s.divider} />}
+
+        {/* ── 진행 중인 매칭 ── */}
         {actives.length > 0 && (
-          <section style={{ marginBottom: 8 }}>
+          <section style={s.section}>
             <div style={s.secRow}>
               <h3 style={s.secTitle}>💘 진행 중인 매칭</h3>
-              <span style={s.moreLink} onClick={() => navigate('/match/history')}>
+              <button
+                style={s.moreLink}
+                onClick={() => navigate('/match/history')}
+              >
                 전체보기 ›
-              </span>
+              </button>
             </div>
             {actives.slice(0, 2).map(m => (
-              <div
+              <button
                 key={m.matchId}
-                className="card"
-                style={{ cursor: 'pointer', marginBottom: 10 }}
+                style={s.matchRow}
                 onClick={() => navigate(`/chat/${m.matchId}`)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={s.activeAvatar}>
-                    <span style={{ fontSize: 26 }}>
-                      {m.partnerGender === 'MALE' ? '🧑' : '👧'}
-                    </span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 700, fontSize: 15 }}>{m.partnerName || '상대방'}</p>
-                    <p style={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>
-                      {{ GENERAL: '공강 매칭', RANK: '랭크 매칭' }[m.matchType] || m.matchType}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: 20 }}>💬</span>
+                <div style={s.activeAvatar}>
+                  <span style={{ fontSize: 24 }}>
+                    {m.partnerGender === 'MALE' ? '🧑' : '👧'}
+                  </span>
                 </div>
-              </div>
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <p style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>
+                    {m.partnerName || '상대방'}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                    {{ GENERAL: '공강 매칭', RANK: '랭크 매칭' }[m.matchType] || m.matchType}
+                  </p>
+                </div>
+                <span style={{ fontSize: 16, color: '#CCC' }}>›</span>
+              </button>
             ))}
           </section>
         )}
 
-        {/* ── 빠른 매칭 선택 ─────────────────── */}
-        <section style={{ marginBottom: 8 }}>
-          <h3 style={{ ...s.secTitle, marginBottom: 10 }}>⚡ 지금 바로 매칭</h3>
-          <div style={s.quickRow}>
-            <QuickBtn
-              icon="🏆" label="랭크 매칭"
-              color="#6C5CE7" bg="#EEE9FF"
+        {/* ────────────── 섹션 구분 ────────────── */}
+        <div style={s.divider} />
+
+        {/* ── 지금 바로 매칭 ── */}
+        <section style={s.section}>
+          <h3 style={{ ...s.secTitle, marginBottom: 12 }}>⚡ 지금 바로 매칭</h3>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <QuickCard
+              icon="🏆"
+              label="랭크 매칭"
+              desc="점수 기반 매칭"
+              accentColor={PRIMARY}
+              accentBg={PRIMARY_BG}
               onClick={() => navigate('/match/waiting', { state: { type: 'RANK' } })}
             />
-            <QuickBtn
-              icon="☕" label="공강 매칭"
-              color="#00B894" bg="#D4F5EC"
+            <QuickCard
+              icon="☕"
+              label="공강 매칭"
+              desc="시간표 기반 매칭"
+              accentColor="#00836B"
+              accentBg="#D4F5EC"
               onClick={() => navigate('/match/freetime')}
             />
           </div>
         </section>
 
-        {/* ── 이전 매칭 이력 ─────────────────── */}
-        <section>
-          <h3 style={{ ...s.secTitle, marginBottom: 10 }}>📋 활동</h3>
-          <div className="card" style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/match/history')}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 24 }}>💌</span>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: 15 }}>이전 매칭</p>
-                  <p style={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>
-                    놓친 인연, 다시 만나보세요
-                  </p>
-                </div>
+        {/* ────────────── 섹션 구분 ────────────── */}
+        <div style={s.divider} />
+
+        {/* ── 활동 ── */}
+        <section style={s.section}>
+          <h3 style={{ ...s.secTitle, marginBottom: 12 }}>📋 활동</h3>
+          <button style={s.activityRow} onClick={() => navigate('/match/history')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
+              <div style={{ ...s.activeAvatar, background: '#FFF0F5' }}>
+                <span style={{ fontSize: 22 }}>💌</span>
               </div>
-              <span style={{ color: 'var(--sub)', fontSize: 18 }}>›</span>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>이전 매칭</p>
+                <p style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                  놓친 인연, 다시 만나보세요
+                </p>
+              </div>
             </div>
-          </div>
+            <span style={{ fontSize: 16, color: '#CCC' }}>›</span>
+          </button>
         </section>
 
       </div>
@@ -284,8 +322,8 @@ export default function HomePage() {
   );
 }
 
-// ── 빠른 매칭 버튼 ────────────────────────────
-function QuickBtn({ icon, label, onClick }) {
+// ── 빠른 매칭 카드 ────────────────────────────
+function QuickCard({ icon, label, desc, accentColor, accentBg, onClick }) {
   const [pressed, setPressed] = useState(false);
   return (
     <button
@@ -295,23 +333,40 @@ function QuickBtn({ icon, label, onClick }) {
       onPointerLeave={() => setPressed(false)}
       style={{
         flex: 1,
-        background: '#fff',
-        border: 'none',
+        background: '#F8F9FB',
+        border: `1.5px solid #EFEFEF`,
         borderRadius: 16,
-        padding: '18px 6px',
+        padding: '18px 14px',
         cursor: 'pointer',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        transform: pressed ? 'scale(0.95)' : 'scale(1)',
-        transition: 'transform .12s',
+        alignItems: 'flex-start',
+        gap: 10,
+        transform: pressed ? 'scale(0.97)' : 'scale(1)',
+        transition: 'transform 0.12s',
         fontFamily: 'inherit',
+        textAlign: 'left',
       }}
     >
-      <span style={{ fontSize: 28 }}>{icon}</span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{label}</span>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12,
+        background: accentBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 22,
+      }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#111' }}>{label}</p>
+        <p style={{ fontSize: 12, color: '#888', marginTop: 3 }}>{desc}</p>
+      </div>
+      <span style={{
+        fontSize: 11, fontWeight: 700,
+        color: accentColor, background: accentBg,
+        padding: '3px 10px', borderRadius: 20,
+      }}>
+        시작하기 →
+      </span>
     </button>
   );
 }
@@ -320,117 +375,121 @@ function QuickBtn({ icon, label, onClick }) {
 const s = {
   page: {
     flex: 1,
-    padding: '0 20px 88px',
-    background: 'var(--bg)',
+    padding: '0 0 88px',
+    background: '#fff',
     overflowY: 'auto',
   },
   header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 14,
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '20px 20px 14px',
   },
-  logo: { display: 'flex', alignItems: 'center', gap: 4 },
-  logoText: { fontSize: 26, fontWeight: 900, color: '#6C5CE7', letterSpacing: -0.5 },
+  logoText: {
+    fontSize: 26, fontWeight: 900, color: PRIMARY, letterSpacing: -0.5,
+  },
   iconBtn: {
-    background: '#fff', border: 'none',
     width: 40, height: 40, borderRadius: 12,
-    fontSize: 20, cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+    background: '#F4F6FB', border: 'none',
+    fontSize: 18, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   avatarBtn: {
     width: 40, height: 40, borderRadius: 12,
-    background: '#EEE9FF',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: PRIMARY_BG, border: 'none',
     fontSize: 20, cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   greetRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: 22,
+    padding: '4px 20px 20px',
   },
-  tierTag: { padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700 },
+  divider: {
+    height: 8, background: '#F4F6FB',
+  },
+  section: {
+    padding: '22px 20px 20px',
+  },
   secRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  secTitle: { fontSize: 15, fontWeight: 700, color: 'var(--text)' },
+  secTitle: {
+    fontSize: 16, fontWeight: 800, color: '#111',
+  },
   countTag: {
-    fontSize: 11, background: '#6C5CE7', color: '#fff',
-    padding: '3px 10px', borderRadius: 20, fontWeight: 600,
+    fontSize: 11, background: PRIMARY, color: '#fff',
+    padding: '3px 10px', borderRadius: 20, fontWeight: 700,
   },
-  moreLink: { fontSize: 12, color: '#6C5CE7', fontWeight: 600, cursor: 'pointer' },
-
-  /* 로딩 카드 */
-  centerCard: {
-    background: '#fff', borderRadius: 24,
-    padding: '40px 24px', marginBottom: 16,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+  moreLink: {
+    fontSize: 12, color: PRIMARY, fontWeight: 600,
+    background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
   },
 
-  /* 시간표 미등록 */
-  emptyCard: {
-    background: '#fff', borderRadius: 24, padding: '32px 24px',
-    textAlign: 'center', cursor: 'pointer',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-    marginBottom: 16, border: '2px dashed #EEE9FF',
+  /* 상태 카드 (로딩/대기/미등록) */
+  stateCard: {
+    background: '#F8F9FB', borderRadius: 20,
+    border: '1.5px solid #EFEFEF',
+    padding: '32px 24px', textAlign: 'center', cursor: 'pointer',
   },
-  emptyBtn: {
+  outlineBtn: {
     display: 'inline-block', marginTop: 18,
-    background: '#6C5CE7', color: '#fff',
+    border: `1.5px solid ${PRIMARY}`, color: PRIMARY,
     padding: '10px 24px', borderRadius: 20,
     fontSize: 14, fontWeight: 700,
   },
 
-  /* 공강 히어로 카드 */
+  /* 히어로 카드 */
   heroCard: {
-    background: 'linear-gradient(145deg, #6C5CE7 0%, #a855f7 100%)',
-    borderRadius: 24, padding: '22px 20px 16px', marginBottom: 16,
-    boxShadow: '0 8px 28px rgba(108,92,231,0.32)',
+    background: `linear-gradient(145deg, ${PRIMARY} 0%, #0050c8 100%)`,
+    borderRadius: 20, padding: '22px 20px 16px',
   },
-  heroTop: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 },
   partnerAvatar: {
-    width: 60, height: 60, borderRadius: 18,
-    background: 'rgba(255,255,255,0.2)',
+    width: 58, height: 58, borderRadius: 16,
+    background: 'rgba(255,255,255,0.18)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   moreBadge: {
-    background: '#FF6B9D', color: '#fff',
+    background: 'rgba(255,255,255,0.25)', color: '#fff',
     padding: '4px 10px', borderRadius: 16,
     fontSize: 13, fontWeight: 700,
   },
   timeBox: {
-    background: 'rgba(255,255,255,0.18)', borderRadius: 14,
+    background: 'rgba(255,255,255,0.15)', borderRadius: 14,
     padding: '12px 16px', display: 'flex', alignItems: 'center',
     gap: 12, marginBottom: 16,
   },
-  btnRow: { display: 'flex', gap: 10 },
-  skipBtn: {
-    flex: 1, padding: '14px', borderRadius: 14, border: 'none',
+  heroSkipBtn: {
+    flex: 1, height: 48, borderRadius: 12, border: 'none',
     background: 'rgba(255,255,255,0.2)', color: '#fff',
     fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
   },
-  likeBtn: {
-    flex: 2, padding: '14px', borderRadius: 14, border: 'none',
+  heroLikeBtn: {
+    flex: 2, height: 48, borderRadius: 12, border: 'none',
     background: '#FF6B9D', color: '#fff',
     fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
   },
-  hint: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 12 },
 
-  /* 대기 카드 */
-  waitCard: {
-    background: '#fff', borderRadius: 24, padding: '32px 24px',
-    textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-    marginBottom: 16,
+  /* 진행 중인 매칭 행 */
+  matchRow: {
+    width: '100%', background: '#F8F9FB',
+    border: '1.5px solid #EFEFEF', borderRadius: 14,
+    padding: '14px 16px', marginBottom: 8,
+    cursor: 'pointer', display: 'flex',
+    alignItems: 'center', gap: 14, fontFamily: 'inherit',
+    boxSizing: 'border-box',
   },
-
-  /* 활성 매칭 아바타 */
   activeAvatar: {
-    width: 48, height: 48, borderRadius: 14, background: '#EEE9FF',
+    width: 46, height: 46, borderRadius: 12,
+    background: PRIMARY_BG,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
 
-  /* 빠른 매칭 */
-  quickRow: { display: 'flex', gap: 10, marginBottom: 16 },
+  /* 활동 행 */
+  activityRow: {
+    width: '100%', background: '#F8F9FB',
+    border: '1.5px solid #EFEFEF', borderRadius: 14,
+    padding: '14px 16px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center',
+    fontFamily: 'inherit', boxSizing: 'border-box',
+  },
 };

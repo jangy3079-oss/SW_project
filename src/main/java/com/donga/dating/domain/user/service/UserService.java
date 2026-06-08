@@ -1,5 +1,6 @@
 package com.donga.dating.domain.user.service;
 
+import com.donga.dating.domain.user.dto.PreferenceDtos;
 import com.donga.dating.domain.user.dto.RegisterRequest;
 import com.donga.dating.domain.user.entity.User;
 import com.donga.dating.domain.user.entity.VerificationToken;
@@ -7,12 +8,14 @@ import com.donga.dating.domain.user.repository.UserRepository;
 import com.donga.dating.domain.user.repository.VerificationTokenRepository;
 import com.donga.dating.global.exception.CustomException;
 import com.donga.dating.global.exception.ErrorCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 /**
  * [UserService]
@@ -29,6 +32,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
+    private final ObjectMapper objectMapper;
 
     // =========================
     // 회원가입 (추가됨)
@@ -135,4 +139,27 @@ public class UserService {
         user.setIsActive(isActive);
         userRepository.save(user);
     }
+
+    @Transactional
+    public void updatePreferences(Long userId, PreferenceDtos.PreferencesUpdateRequest request) {
+        User user = getUser(userId);
+        try {
+            String json = objectMapper.writeValueAsString(request.preferences());
+            user.updatePreferences(json);
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INVALID_JSON);
+        }
+    }
+
+    public PreferenceDtos.PreferencesResponse getPreferences(Long userId) {
+        User user = getUser(userId);
+        try {
+            Map<String, String> prefs = objectMapper.readValue(user.getPreferences(), Map.class);
+            return PreferenceDtos.PreferencesResponse.from(prefs);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INVALID_JSON);
+        }
+    }
+
 }

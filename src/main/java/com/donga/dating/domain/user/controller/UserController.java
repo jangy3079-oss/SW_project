@@ -79,7 +79,7 @@ public class UserController {
     /** 선호도 수정 */
     @PutMapping("/{userId}/preferences")
     public ResponseEntity<ApiResponse<String>> updatePreferences(@PathVariable Long userId,
-                                                                  @RequestBody PreferenceDtos.PreferencesUpdateRequest request) {
+                                                                 @RequestBody PreferenceDtos.PreferencesUpdateRequest request) {
         userService.updatePreferences(userId, request);
         return ResponseEntity.ok(ApiResponse.success("선호도가 업데이트되었습니다."));
     }

@@ -11,6 +11,7 @@ public enum ErrorCode {
     // 공통
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    INVALID_JSON(HttpStatus.BAD_REQUEST, "잘못된 JSON 형식입니다."),
 
     // 사용자
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
@@ -22,7 +23,6 @@ public enum ErrorCode {
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증된 계정입니다."),
     PROFILE_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "프로필이 공개 상태가 아니어서 접근할 수 없습니다."),
     INVALID_MATCH_CONDITION(HttpStatus.BAD_REQUEST, "매칭 조건이 충족되지 않습니다."),
-
 
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."),

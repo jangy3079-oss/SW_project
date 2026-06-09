@@ -60,21 +60,21 @@ public class MatchingScheduler {
     }
 
     /**
-     * 매 5분마다 실행: 만료된 좋아요 자동 거절 처리
+     * 30초마다 실행: 랭크 매칭 60초 수락 타임아웃 처리
      *
      * 역할:
-     * - 24시간이 지난 PENDING 좋아요 → EXPIRED 처리
-     * - 랭크 매칭 60초 타임아웃 → AUTO_REJECTED 처리
+     * - 만료된 PENDING Like → EXPIRED 처리
+     * - 상대방 Like 동기화, 양측 Redis 큐/플래그 정리, 매칭 취소 알림 발송
      */
-    @Scheduled(fixedDelay = 300000, initialDelay = 60000)  // 5분마다, 초기 1분 딜레이
-    public void processExpiredLikes() {
-        log.debug("[스케줄러] 만료된 좋아요 처리 시작");
+    @Scheduled(fixedDelay = 30000, initialDelay = 15000)
+    public void processExpiredRankMatchingAcceptances() {
+        log.debug("[스케줄러] 랭크 매칭 수락 타임아웃 처리 시작");
 
         try {
             rankMatchingService.autoRejectExpiredAcceptances();
-            log.debug("[스케줄러] 만료된 좋아요 처리 완료");
+            log.debug("[스케줄러] 랭크 매칭 수락 타임아웃 처리 완료");
         } catch (Exception e) {
-            log.error("[스케줄러] 만료된 좋아요 처리 실패", e);
+            log.error("[스케줄러] 랭크 매칭 수락 타임아웃 처리 실패", e);
         }
     }
 

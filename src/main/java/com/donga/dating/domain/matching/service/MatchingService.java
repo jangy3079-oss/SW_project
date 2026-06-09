@@ -1,6 +1,7 @@
 package com.donga.dating.domain.matching.service;
 
 import com.donga.dating.domain.matching.entity.Match;
+import com.donga.dating.domain.matching.entity.Match.MatchType; // [보정] 경로 단순화를 위한 내부 Enum 정적 임포트
 import com.donga.dating.domain.matching.entity.MatchQueue;
 import com.donga.dating.domain.matching.repository.MatchQueueRepository;
 import com.donga.dating.domain.matching.repository.MatchRepository;
@@ -25,16 +26,20 @@ public class MatchingService {
     private final MatchQueueRepository queueRepository;
     private final UserRepository userRepository;
 
-    /** 일반 매칭 큐 등록 */
+    /** * 일반 매칭 큐 등록
+     * [보정 완료] 패키지 절대 경로 명시 제거
+     */
     @Transactional
-    public void enterQueue(Long userId, com.donga.dating.domain.matching.entity.Match.MatchType matchType) {
+    public void enterQueue(Long userId, MatchType matchType) {
         enterQueue(userId, matchType, null, null, null);
     }
 
-    /** 공강 매칭 큐 등록 */
+    /** * 공강 매칭 큐 등록
+     * [보정 완료] 패키지 절대 경로 명시 제거
+     */
     @Transactional
     public void enterQueue(Long userId,
-                           com.donga.dating.domain.matching.entity.Match.MatchType matchType,
+                           MatchType matchType,
                            DayOfWeek lectureDay,
                            LocalTime lectureStartTime,
                            LocalTime lectureEndTime) {
@@ -56,30 +61,42 @@ public class MatchingService {
         queueRepository.save(queue);
     }
 
-    /** 대기열 취소 */
+    /** * 대기열 취소
+     * [보정 완료] 패키지 절대 경로 명시 제거
+     */
     @Transactional
-    public void cancelQueue(Long userId, com.donga.dating.domain.matching.entity.Match.MatchType matchType) {
+    public void cancelQueue(Long userId, MatchType matchType) {
         MatchQueue queue = queueRepository
                 .findByUser_UserIdAndMatchTypeAndStatus(userId, matchType, MatchQueue.QueueStatus.WAITING)
                 .orElseThrow(() -> new CustomException(ErrorCode.QUEUE_NOT_FOUND));
         queue.cancel();
     }
 
-    /** 후보군 조회 */
-    public List<MatchQueue> getWaitingOpposites(com.donga.dating.domain.matching.entity.Match.MatchType matchType,
-                                                User.Gender gender) {
+    /** * 후보군 조회
+     * [보정 완료] 패키지 절대 경로 명시 제거
+     */
+    public List<MatchQueue> getWaitingOpposites(MatchType matchType, User.Gender gender) {
         return queueRepository.findByMatchTypeAndStatusAndUser_GenderOrderByEnteredAtAsc(
                 matchType, MatchQueue.QueueStatus.WAITING, gender);
     }
 
+    /**
+     * 현재 활성화된 매칭 목록 조회
+     */
     public List<Match> getActiveMatches(Long userId) {
         return matchRepository.findActiveMatchesByUserId(userId);
     }
 
+    /**
+     * 과거 매칭 히스토리 조회
+     */
     public List<Match> getMatchHistory(Long userId) {
         return matchRepository.findMatchHistoryByUserId(userId);
     }
 
+    /**
+     * 특정 시간표 기반 공강 매칭 대상 후보군 조회
+     */
     public List<User> getLectureMatchCandidates(Long userId,
                                                 DayOfWeek lectureDay,
                                                 LocalTime lectureStartTime,

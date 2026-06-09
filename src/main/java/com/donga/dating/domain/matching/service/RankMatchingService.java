@@ -44,6 +44,7 @@ public class RankMatchingService {
     private final LikeRepository likeRepository;
     private final MatchRepository matchRepository;
     private final ChatService chatService;
+    private final MatchNotificationService matchNotificationService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final LockRegistry lockRegistry;
 
@@ -51,6 +52,12 @@ public class RankMatchingService {
     private static final String RANK_QUEUE_PREFIX = "rank:queue:";
     private static final String RANK_BLOCK_LIST_PREFIX = "rank:block:";
     private static final String RANK_MATCH_ATTEMPT_PREFIX = "rank:match-attempt:";
+    private static final String RANK_ENTRY_PREFIX = "rank:entry:";
+    private static final String RANK_ACCEPTANCE_PREFIX = "rank:acceptance:";
+
+    private static final Duration RANK_LIKE_ACCEPTANCE_WINDOW = Duration.ofSeconds(60);
+    private static final String CANCEL_REASON_REJECTED = "REJECTED";
+    private static final String CANCEL_REASON_TIMEOUT = "TIMEOUT";
 
     /**
      * 랭크 매칭 큐에 진입
@@ -154,11 +161,11 @@ public class RankMatchingService {
      */
     private int calculateScoreWindow(Long userId) {
         String attemptKey = RANK_MATCH_ATTEMPT_PREFIX + userId;
-        Long enteredAt = (Long) redisTemplate.opsForValue().get("rank:entry:" + userId);
+        Long enteredAt = (Long) redisTemplate.opsForValue().get(RANK_ENTRY_PREFIX + userId);
 
         if (enteredAt == null) {
             enteredAt = System.currentTimeMillis();
-            redisTemplate.opsForValue().set("rank:entry:" + userId, enteredAt, Duration.ofMinutes(10));
+            redisTemplate.opsForValue().set(RANK_ENTRY_PREFIX + userId, enteredAt, Duration.ofMinutes(10));
         }
 
         long elapsedMs = System.currentTimeMillis() - enteredAt;
@@ -273,8 +280,8 @@ public class RankMatchingService {
      * 랭크 매칭 수락 타임아웃 설정 (60초)
      */
     private void setRankMatchingAcceptanceTimeout(Long userId1, Long userId2) {
-        String timeoutKey = "rank:acceptance:" + userId1 + ":" + userId2;
-        redisTemplate.opsForValue().set(timeoutKey, "pending", Duration.ofSeconds(60));
+        String timeoutKey = RANK_ACCEPTANCE_PREFIX + userId1 + ":" + userId2;
+        redisTemplate.opsForValue().set(timeoutKey, "pending", RANK_LIKE_ACCEPTANCE_WINDOW);
     }
 
     /**
@@ -351,7 +358,7 @@ public class RankMatchingService {
         exitRankQueue(userId1, user1.getGender());
         exitRankQueue(userId2, user2.getGender());
 
-        clearRankAcceptanceTimeout(userId1, userId2);
+        clearRankMatchFlags(userId1, userId2);
 
         log.info("[랭크 매칭 수락] {} ↔ {} 양측 수락 완료, matchId={}", userId1, userId2, match.getMatchId());
     }
@@ -381,9 +388,13 @@ public class RankMatchingService {
                 .forEach(Like::reject);
     }
 
-    private void clearRankAcceptanceTimeout(Long userId1, Long userId2) {
-        redisTemplate.delete("rank:acceptance:" + userId1 + ":" + userId2);
-        redisTemplate.delete("rank:acceptance:" + userId2 + ":" + userId1);
+    private void clearRankMatchFlags(Long userId1, Long userId2) {
+        redisTemplate.delete(RANK_ACCEPTANCE_PREFIX + userId1 + ":" + userId2);
+        redisTemplate.delete(RANK_ACCEPTANCE_PREFIX + userId2 + ":" + userId1);
+        redisTemplate.delete(RANK_ENTRY_PREFIX + userId1);
+        redisTemplate.delete(RANK_ENTRY_PREFIX + userId2);
+        redisTemplate.delete(RANK_MATCH_ATTEMPT_PREFIX + userId1);
+        redisTemplate.delete(RANK_MATCH_ATTEMPT_PREFIX + userId2);
     }
 
     /**
@@ -394,45 +405,141 @@ public class RankMatchingService {
      */
     @Transactional
     public void rejectRankMatching(Long userId, Long senderId) {
-        Like like = likeRepository.findBySenderIdAndReceiverId(senderId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
+        String lockKey = buildRankPairLockKey(userId, senderId);
+        Lock lock = lockRegistry.obtain(lockKey);
 
-        if (like.getStatus() != Like.Status.PENDING) {
-            throw new CustomException(ErrorCode.LIKE_ALREADY_PROCESSED);
+        if (!lock.tryLock()) {
+            throw new CustomException(ErrorCode.CONCURRENT_REQUEST_FAILED);
         }
 
-        like.reject();
-        likeRepository.save(like);
+        try {
+            Like like = likeRepository.findBySenderIdAndReceiverId(senderId, userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.LIKE_NOT_FOUND));
 
-        // 24시간 블록리스트 추가
-        String blockKey = RANK_BLOCK_LIST_PREFIX + userId + ":" + senderId;
-        redisTemplate.opsForValue().set(blockKey, "blocked", Duration.ofHours(24));
+            if (like.getStatus() != Like.Status.PENDING) {
+                throw new CustomException(ErrorCode.LIKE_ALREADY_PROCESSED);
+            }
 
-        // 거절자도 큐에서 제거 후 재진입 가능
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        exitRankQueue(userId, user.getGender());
+            like.reject();
+            likeRepository.save(like);
 
-        log.info("[랭크 매칭 거절] {} 거절 (상대: {}), 24시간 블록리스트 추가", userId, senderId);
+            rejectCounterpartPendingLike(userId, senderId);
+
+            String blockKey = RANK_BLOCK_LIST_PREFIX + userId + ":" + senderId;
+            redisTemplate.opsForValue().set(blockKey, "blocked", Duration.ofHours(24));
+
+            cancelRankMatchingAttempt(userId, senderId, CANCEL_REASON_REJECTED);
+
+            log.info("[랭크 매칭 거절] {} 거절 (상대: {}), 24시간 블록리스트 추가", userId, senderId);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
-     * 배치: 60초 타임아웃된 좋아요 자동 거절
+     * 배치/스케줄러: 60초 타임아웃된 랭크 매칭 수락 좋아요 처리
      */
     @Transactional
     public void autoRejectExpiredAcceptances() {
         List<Like> expiredLikes = likeRepository.findExpiredPendingLikes(Like.Status.PENDING);
+        Set<String> processedPairs = new HashSet<>();
 
         for (Like like : expiredLikes) {
-            if (like.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (like.getExpiresAt() == null || !like.getExpiresAt().isBefore(LocalDateTime.now())) {
+                continue;
+            }
+
+            if (!isRankMatchingLike(like)) {
                 like.autoReject();
                 likeRepository.save(like);
+                continue;
             }
+
+            Long userId1 = like.getSenderId();
+            Long userId2 = like.getReceiverId();
+            String pairKey = buildRankPairKey(userId1, userId2);
+
+            if (!processedPairs.add(pairKey)) {
+                continue;
+            }
+
+            processExpiredRankMatchingPair(userId1, userId2);
+        }
+    }
+
+    /**
+     * 60초 수락 타임아웃된 랭크 매칭 쌍 정리
+     */
+    private void processExpiredRankMatchingPair(Long userId1, Long userId2) {
+        String lockKey = buildRankPairLockKey(userId1, userId2);
+        Lock lock = lockRegistry.obtain(lockKey);
+
+        if (!lock.tryLock()) {
+            log.warn("[랭크 매칭 타임아웃] {} ↔ {} 동시 처리 중, 다음 주기에 재시도", userId1, userId2);
+            return;
         }
 
-        if (!expiredLikes.isEmpty()) {
-            log.info("[자동 거절] {}건의 타임아웃된 랭크 매칭 자동 거절", expiredLikes.size());
+        try {
+            expirePendingLikeIfExists(userId1, userId2);
+            expirePendingLikeIfExists(userId2, userId1);
+
+            cancelRankMatchingAttempt(userId1, userId2, CANCEL_REASON_TIMEOUT);
+
+            log.info("[랭크 매칭 타임아웃] {} ↔ {} 수락 기한 만료", userId1, userId2);
+        } finally {
+            lock.unlock();
         }
+    }
+
+    /**
+     * 랭크 매칭 시도 취소: 큐 탈출, Redis 플래그 초기화, 알림 발송
+     */
+    private void cancelRankMatchingAttempt(Long userId1, Long userId2, String reason) {
+        User user1 = userRepository.findById(userId1)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findById(userId2)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        exitRankQueue(userId1, user1.getGender());
+        exitRankQueue(userId2, user2.getGender());
+        clearRankMatchFlags(userId1, userId2);
+
+        matchNotificationService.notifyMatchCancelled(userId1, userId2, reason);
+        matchNotificationService.notifyMatchCancelled(userId2, userId1, reason);
+    }
+
+    private void rejectCounterpartPendingLike(Long receiverId, Long senderId) {
+        likeRepository.findBySenderIdAndReceiverId(receiverId, senderId)
+                .filter(like -> like.getStatus() == Like.Status.PENDING)
+                .ifPresent(reverseLike -> {
+                    reverseLike.reject();
+                    likeRepository.save(reverseLike);
+                });
+    }
+
+    private void expirePendingLikeIfExists(Long senderId, Long receiverId) {
+        likeRepository.findBySenderIdAndReceiverId(senderId, receiverId)
+                .filter(like -> like.getStatus() == Like.Status.PENDING)
+                .ifPresent(like -> {
+                    like.expire();
+                    likeRepository.save(like);
+                });
+    }
+
+    private boolean isRankMatchingLike(Like like) {
+        if (like.getExpiresAt() == null || like.getCreatedAt() == null) {
+            return false;
+        }
+        long acceptanceSeconds = Duration.between(like.getCreatedAt(), like.getExpiresAt()).getSeconds();
+        return acceptanceSeconds <= RANK_LIKE_ACCEPTANCE_WINDOW.getSeconds() + 5;
+    }
+
+    private String buildRankPairLockKey(Long userId1, Long userId2) {
+        return "accept-rank:" + Math.min(userId1, userId2) + ":" + Math.max(userId1, userId2);
+    }
+
+    private String buildRankPairKey(Long userId1, Long userId2) {
+        return Math.min(userId1, userId2) + ":" + Math.max(userId1, userId2);
     }
 }
 

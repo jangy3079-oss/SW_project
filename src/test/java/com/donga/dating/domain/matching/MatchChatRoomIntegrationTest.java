@@ -10,8 +10,10 @@ import com.donga.dating.domain.matching.entity.Match;
 import com.donga.dating.domain.matching.service.MatchingService;
 import com.donga.dating.domain.user.entity.User;
 import com.donga.dating.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach; // [임포트 추가]
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito; // [임포트 추가]
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -24,8 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.concurrent.locks.Lock; // [임포트 추가]
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString; // [임포트 추가]
 
 /**
  * 매칭 성사(LikeService.acceptHeart → Match 생성) 시
@@ -56,6 +60,18 @@ class MatchChatRoomIntegrationTest {
 
     @MockBean
     private JavaMailSender javaMailSender;
+
+    /**
+     * [보정 완료] 분산 락 컴포넌트 프리셋 지정
+     * 비즈니스 로직 내부에서 Redis 분산 락을 획득하려고 할 때
+     * NullPointerException이 발생하여 테스트가 깨지는 현상을 방지합니다.
+     */
+    @BeforeEach
+    void setUpLocks() {
+        Lock mockLock = Mockito.mock(Lock.class);
+        Mockito.when(mockLock.tryLock()).thenReturn(true); // 어떤 상황이든 락을 즉시 획득하도록 설정
+        Mockito.when(lockRegistry.obtain(anyString())).thenReturn(mockLock);
+    }
 
     @Test
     @DisplayName("매칭 성사 시 채팅방이 자동으로 생성된다")

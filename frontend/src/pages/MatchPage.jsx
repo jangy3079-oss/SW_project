@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { matching } from '../api/client';
 import BottomTabBar from '../components/BottomTabBar';
+import { Shuffle, Trophy, Coffee, Inbox, ChevronRight } from 'lucide-react';
+
+const PRIMARY = '#003087';
+const PRIMARY_BG = '#EAF0FB';
+const SUB     = '#888888';
+const SHADOW  = '0 2px 12px rgba(0,0,0,0.07)';
 
 export default function MatchPage() {
   const navigate = useNavigate();
@@ -19,115 +25,152 @@ export default function MatchPage() {
   }, [userInfo?.userId]);
 
   return (
-    <div className="app-shell">
-      <div className="page">
-        <h2 className="page-header">매칭</h2>
+    <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      <div style={{ flex: 1, paddingBottom: 88, overflowY: 'auto' }}>
 
-        {/* 매칭 선택 */}
-        <p className="section-title">새 매칭 시작</p>
+        {/* 헤더 */}
+        <div style={{ padding: '20px 34px 6px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', letterSpacing: -0.5, margin: 0 }}>매칭</h1>
+        </div>
 
-        <OptionCard
-          icon="🎲" bg="#FFE8F0" color="#FF6B9D"
-          title="일반 매칭"
-          desc="전체 학생과 랜덤 매칭 · 남녀 매칭 보장"
-          onClick={() => navigate('/match/waiting', { state: { type: 'GENERAL' } })}
-        />
-        <OptionCard
-          icon="🏆" bg="#EEE9FF" color="#6C5CE7"
-          title="랭크 매칭"
-          desc="내 티어 근처 상대와 정밀 매칭"
-          onClick={() => navigate('/match/waiting', { state: { type: 'RANK' } })}
-        />
-        <OptionCard
-          icon="☕" bg="#D4F5EC" color="#00B894"
-          title="공강 친구 매칭"
-          desc="공강 시간이 맞는 친구 찾기"
-          onClick={() => navigate('/match/freetime')}
-        />
+        {/* 새 매칭 */}
+        <div style={{ padding: '20px 20px 0' }}>
+          <p style={s.sectionLabel}>새 매칭 시작</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <OptionCard
+              Icon={Shuffle}
+              title="일반 매칭"
+              desc="전체 학생과 랜덤 매칭 · 남녀 매칭 보장"
+              onClick={() => navigate('/match/waiting', { state: { type: 'GENERAL' } })}
+            />
+            <OptionCard
+              Icon={Trophy}
+              title="랭크 매칭"
+              desc="내 티어 근처 상대와 정밀 매칭"
+              onClick={() => navigate('/match/waiting', { state: { type: 'RANK' } })}
+            />
+            <OptionCard
+              Icon={Coffee}
+              title="공강 친구 매칭"
+              desc="공강 시간이 맞는 친구 찾기"
+              onClick={() => navigate('/match/freetime')}
+            />
+          </div>
+        </div>
 
         {/* 매칭 이력 */}
-        <p className="section-title" style={{ marginTop: 28 }}>매칭 이력</p>
+        <div style={{ padding: '28px 20px 0' }}>
+          <p style={s.sectionLabel}>매칭 이력</p>
 
-        {loading && <div className="spinner" />}
-
-        {!loading && history.length === 0 && (
-          <div className="card" style={{ textAlign: 'center', color: 'var(--sub)', padding: '32px 20px' }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
-            <p>아직 매칭 이력이 없어요</p>
-          </div>
-        )}
-
-        {history.map(m => (
-          <div key={m.matchId} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontWeight: 700 }}>{m.partnerName || '상대방'}</span>
-                  <StatusBadge status={m.status} />
-                </div>
-                <p style={{ fontSize: 13, color: 'var(--sub)' }}>
-                  {m.matchType === 'RANK' ? '🏆 랭크' : '🎲 일반'} ·{' '}
-                  {m.matchedAt ? new Date(m.matchedAt).toLocaleDateString('ko-KR') : '-'}
-                </p>
-              </div>
-              {m.status === 'ACTIVE' && (
-                <button
-                  className="btn btn-primary"
-                  style={{ width: 'auto', padding: '8px 14px', fontSize: 13 }}
-                  onClick={() => navigate(`/match/evaluate/${m.matchId}`, { state: { match: m } })}
-                >
-                  평가
-                </button>
-              )}
+          {loading && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
+              <div className="spinner" style={{ borderTopColor: PRIMARY }} />
             </div>
+          )}
+
+          {!loading && history.length === 0 && (
+            <div style={s.emptyBox}>
+              <Inbox size={32} color="#D0D5DD" strokeWidth={1.5} />
+              <p style={{ fontSize: 14, color: SUB, marginTop: 10 }}>아직 매칭 이력이 없어요</p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {history.map(m => (
+              <div key={m.matchId} style={s.historyCard}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+                      {m.partnerName || '상대방'}
+                    </span>
+                    <StatusBadge status={m.status} />
+                  </div>
+                  <p style={{ fontSize: 12, color: SUB }}>
+                    {m.matchType === 'RANK' ? '랭크' : '일반'} ·{' '}
+                    {m.matchedAt ? new Date(m.matchedAt).toLocaleDateString('ko-KR') : '-'}
+                  </p>
+                </div>
+                {m.status === 'ACTIVE' && (
+                  <button
+                    style={s.evalBtn}
+                    onClick={() => navigate(`/match/evaluate/${m.matchId}`, { state: { match: m } })}
+                  >
+                    평가
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
       </div>
       <BottomTabBar />
     </div>
   );
 }
 
-function OptionCard({ icon, bg, color, title, desc, badge, disabled, onClick }) {
+function OptionCard({ Icon, title, desc, onClick }) {
   return (
-    <div
-      className="match-option-card"
-      onClick={disabled ? undefined : onClick}
-      style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'default' : 'pointer' }}
-    >
-      <div className="match-icon" style={{ background: bg, color }}>{icon}</div>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>
-          {badge && (
-            <span style={{
-              fontSize: 11, background: 'var(--border)', color: 'var(--sub)',
-              padding: '2px 7px', borderRadius: 20, fontWeight: 600,
-            }}>{badge}</span>
-          )}
-        </div>
-        <p style={{ fontSize: 13, color: 'var(--sub)', marginTop: 2 }}>{desc}</p>
+    <div style={s.optionCard} onClick={onClick}>
+      <div style={s.iconWrap}>
+        <Icon size={20} color={PRIMARY} strokeWidth={2} />
       </div>
-      <span style={{ color: 'var(--sub)', fontSize: 18 }}>›</span>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 15, fontWeight: 700, color: '#111', margin: 0 }}>{title}</p>
+        <p style={{ fontSize: 13, color: SUB, marginTop: 2 }}>{desc}</p>
+      </div>
+      <ChevronRight size={16} color="#D0D5DD" strokeWidth={2.5} />
     </div>
   );
 }
 
 const STATUS_MAP = {
-  ACTIVE:    { label: '진행 중', bg: '#E8F8F0', color: '#1a7a45' },
-  EVALUATED: { label: '평가 완료', bg: 'var(--border)', color: 'var(--sub)' },
-  EXPIRED:   { label: '만료됨', bg: '#FDECEA', color: '#B00020' },
+  ACTIVE:    { label: '진행 중',   bg: PRIMARY_BG, color: PRIMARY },
+  EVALUATED: { label: '평가 완료', bg: '#F4F4F4',  color: SUB },
+  EXPIRED:   { label: '만료됨',    bg: '#F4F4F4',  color: SUB },
 };
 
 function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] || STATUS_MAP.EXPIRED;
+  const st = STATUS_MAP[status] || STATUS_MAP.EXPIRED;
   return (
-    <span style={{
-      fontSize: 11, fontWeight: 700,
-      background: s.bg, color: s.color,
-      padding: '2px 8px', borderRadius: 20,
-    }}>
-      {s.label}
+    <span style={{ fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, padding: '2px 8px', borderRadius: 20 }}>
+      {st.label}
     </span>
   );
 }
+
+const s = {
+  sectionLabel: {
+    fontSize: 12, fontWeight: 700, color: SUB,
+    textTransform: 'uppercase', letterSpacing: 0.5,
+    margin: '0 0 12px',
+  },
+  optionCard: {
+    display: 'flex', alignItems: 'center', gap: 14,
+    background: '#fff', borderRadius: 16, padding: '16px 18px',
+    boxShadow: SHADOW, cursor: 'pointer',
+  },
+  iconWrap: {
+    width: 46, height: 46, borderRadius: 13,
+    background: PRIMARY_BG,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  historyCard: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    background: '#fff', borderRadius: 14, padding: '14px 16px',
+    boxShadow: SHADOW,
+  },
+  evalBtn: {
+    padding: '7px 16px', borderRadius: 20,
+    background: PRIMARY, color: '#fff',
+    border: 'none', cursor: 'pointer',
+    fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+    flexShrink: 0,
+  },
+  emptyBox: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    padding: '40px 20px', background: '#fff',
+    borderRadius: 16, boxShadow: SHADOW,
+  },
+};

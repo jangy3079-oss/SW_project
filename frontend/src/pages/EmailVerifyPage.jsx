@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { user as userApi } from '../api/client';
+import { Mail } from 'lucide-react';
 
 export default function EmailVerifyPage() {
   const navigate = useNavigate();
@@ -42,7 +43,9 @@ export default function EmailVerifyPage() {
   return (
     <div className="page page-no-tab" style={{ paddingTop: 60 }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 52, marginBottom: 12 }}>📧</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <Mail size={52} color="var(--primary)" strokeWidth={1.5} />
+        </div>
         <h2 style={{ fontSize: 22, fontWeight: 700 }}>이메일 인증</h2>
         <p style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8, lineHeight: 1.5 }}>
           {email ? `${email}으로 인증 링크를 발송했습니다.` : '가입한 이메일로 인증 링크를 발송했습니다.'}<br />

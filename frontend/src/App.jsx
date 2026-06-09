@@ -1,6 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+
+function PageTransition({ children }) {
+  const { pathname } = useLocation();
+  return (
+    <div key={pathname} className="page-transition">
+      {children}
+    </div>
+  );
+}
 
 import SplashPage       from './pages/SplashPage';
 import LoginPage        from './pages/LoginPage';
@@ -16,13 +25,15 @@ import ChatPage            from './pages/ChatPage';
 import MyPage              from './pages/MyPage';
 import ProfileEditPage     from './pages/ProfileEditPage';
 import ProfileSetupPage    from './pages/ProfileSetupPage';
-import FreeTimeMatchingPage from './pages/FreeTimeMatchingPage';
+import FreeTimeMatchingPage  from './pages/FreeTimeMatchingPage';
+import PartnerProfilePage    from './pages/PartnerProfilePage';
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div style={{ width: '100%' }}>
+          <PageTransition>
           <Routes>
             {/* 공개 */}
             <Route path="/"        element={<SplashPage />} />
@@ -43,9 +54,11 @@ export default function App() {
             <Route path="/mypage/edit" element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} />
             <Route path="/profile/setup" element={<ProtectedRoute><ProfileSetupPage /></ProtectedRoute>} />
             <Route path="/match/freetime" element={<ProtectedRoute><FreeTimeMatchingPage /></ProtectedRoute>} />
+            <Route path="/partner/:partnerId" element={<ProtectedRoute><PartnerProfilePage /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </PageTransition>
         </div>
       </BrowserRouter>
     </AuthProvider>

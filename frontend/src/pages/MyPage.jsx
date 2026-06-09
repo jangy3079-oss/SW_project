@@ -3,28 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, photo as photoApi } from '../api/client';
 import BottomTabBar from '../components/BottomTabBar';
+import {
+  Eye, Trophy,
+  Settings, Camera, Sliders, UserSearch, LogOut,
+} from 'lucide-react';
 
 // ── 상수 ──────────────────────────────────────────────────────────────
-const PRIMARY    = '#003087';   // Pantone 282C (동아대 포인트 컬러)
+const PRIMARY    = '#003087';
 const PRIMARY_BG = '#EAF0FB';
 
 const TIER_META = {
-  BRONZE:   { emoji: '🥉', label: 'BRONZE',   desc: '평균 2.0점 이상이면 실버 승급' },
-  SILVER:   { emoji: '🥈', label: 'SILVER',   desc: '평균 3.0점 이상이면 골드 승급' },
-  GOLD:     { emoji: '🥇', label: 'GOLD',     desc: '평균 4.0점 이상이면 플래티넘 승급' },
-  PLATINUM: { emoji: '💎', label: 'PLATINUM', desc: '평균 4.5점 이상이면 다이아 승급' },
-  DIAMOND:  { emoji: '✨', label: 'DIAMOND',  desc: '최고 티어입니다!' },
+  BRONZE:   { label: 'BRONZE',   color: '#CD7F32', desc: '평균 2.0점 이상이면 실버 승급' },
+  SILVER:   { label: 'SILVER',   color: '#A8A9AD', desc: '평균 3.0점 이상이면 골드 승급' },
+  GOLD:     { label: 'GOLD',     color: '#FFD700', desc: '평균 4.0점 이상이면 플래티넘 승급' },
+  PLATINUM: { label: 'PLATINUM', color: '#5AA9E6', desc: '평균 4.5점 이상이면 다이아 승급' },
+  DIAMOND:  { label: 'DIAMOND',  color: '#B9F2FF', desc: '최고 티어입니다!' },
 };
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────────────
 export default function MyPage() {
-  const navigate    = useNavigate();
+  const navigate     = useNavigate();
   const { userInfo, logout } = useAuth();
   const fileInputRef = useRef(null);
 
   const [profile,   setProfile]   = useState(null);
   const [photos,    setPhotos]    = useState([]);
-  const [prefs,     setPrefs]     = useState({ sameDepExclude: false, sameSchoolExclude: false, pushEnabled: true });
+  const [prefs,     setPrefs]     = useState({ sameDepExclude: false, pushEnabled: true });
   const [loading,   setLoading]   = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -48,8 +52,9 @@ export default function MyPage() {
   const tierInfo = TIER_META[tier] || TIER_META.BRONZE;
   const score    = profile?.rankScore ?? '-';
   const evalCnt  = profile?.evalCount ?? 0;
+  const name       = profile?.name || userInfo?.name || '이름 없음';
+  const department = profile?.department || userInfo?.department || '';
 
-  // 사진 업로드
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !uid) return;
@@ -66,14 +71,13 @@ export default function MyPage() {
     }
   };
 
-  // 토글 설정 변경
   const handleToggle = async (key) => {
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
     try {
       await userApi.updatePreferences(uid, next);
     } catch {
-      setPrefs(prefs); // 실패 시 롤백
+      setPrefs(prefs);
     }
   };
 
@@ -81,138 +85,98 @@ export default function MyPage() {
 
   return (
     <div className="app-shell">
-      <div style={{ flex: 1, paddingBottom: 88, background: '#F4F6FB', overflowY: 'auto' }}>
+      <div style={{ flex: 1, paddingBottom: 88, background: '#fff', overflowY: 'auto' }}>
 
         {/* ── 헤더 ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 20px 14px' }}>
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111' }}>내 정보</h2>
-            <p style={{ fontSize: 13, color: '#888', marginTop: 3 }}>내 정보와 활동을 한눈에 확인해요</p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 34px 8px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', letterSpacing: -0.5 }}>{name}</h1>
           <button onClick={() => navigate('/settings')} style={s.iconBtn}>
-            <SettingsIcon color={PRIMARY} />
+            <Settings size={20} color={PRIMARY} strokeWidth={2} />
           </button>
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
             <div className="spinner" />
           </div>
         ) : (
           <>
-            {/* ── 프로필 히어로 카드 ── */}
-            <div style={{ margin: '0 16px', borderRadius: 20, overflow: 'hidden', position: 'relative', height: 220, cursor: 'pointer' }}
-              onClick={() => fileInputRef.current?.click()}>
-              {primaryPhoto ? (
-                <img
-                  src={`/uploads/profiles/${primaryPhoto.fileName}`}
-                  alt="프로필"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <div style={{
-                  width: '100%', height: '100%',
-                  background: `linear-gradient(135deg, ${PRIMARY} 0%, #1a5aaa 100%)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: 64, opacity: 0.5 }}>👤</span>
-                </div>
-              )}
-
-              {/* 그라디언트 오버레이 */}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.68) 0%, transparent 55%)' }} />
-
-              {/* 랭크 배지 */}
-              <div style={s.rankBadge}>
-                <span style={{ fontSize: 15 }}>{tierInfo.emoji}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{evalCnt}개</span>
-              </div>
-
-              {/* 이름 / 학교 */}
-              <div style={{ position: 'absolute', bottom: 16, left: 16, right: 70 }}>
-                <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, letterSpacing: -0.3 }}>
-                  {profile?.name || userInfo?.name || '이름 없음'}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>동아대학교</span>
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>여기를 터치하여 내 프로필을 볼 수 있어요!</span>
+            {/* ── 원형 프로필 사진 ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 20px 4px' }}>
+              <div
+                style={{ position: 'relative', width: 110, height: 110, borderRadius: '50%', boxShadow: `0 0 0 4px ${PRIMARY_BG}, 0 0 0 6px ${PRIMARY}`, cursor: 'pointer' }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {primaryPhoto ? (
+                  <img src={`/uploads/${primaryPhoto.fileName}`} alt="프로필"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY} 0%, #1a5aaa 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Camera size={30} color="rgba(255,255,255,0.8)" />
+                  </div>
+                )}
+                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 28, height: 28, borderRadius: '50%', background: PRIMARY, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Camera size={13} color="#fff" strokeWidth={2.5} />
                 </div>
               </div>
+              {uploading && <p style={{ fontSize: 12, color: PRIMARY, marginTop: 8 }}>업로드 중...</p>}
+              <p style={{ fontSize: 17, fontWeight: 700, color: '#111', marginTop: 12 }}>{name}</p>
+              <p style={{ fontSize: 13, color: '#999', marginTop: 3 }}>
+                동아대학교{department ? ` · ${department}` : ''}
+              </p>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
 
-              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
+            {/* ── My 활동 (가로선 구분) ── */}
+            <div style={{ margin: '20px 0 0' }}>
+              <HRule />
+              {/* 스탯 3열 */}
+              <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', padding: '18px 0' }}>
+                <StatItem value={typeof score === 'number' ? Number(score).toFixed(2) : score} label="평균 점수" />
+                <div style={{ width: 1, background: '#EBEBEB', alignSelf: 'stretch' }} />
+                <StatItem value={evalCnt} label="받은 평가" />
+                <div style={{ width: 1, background: '#EBEBEB', alignSelf: 'stretch' }} />
+                <StatItem value={tier} label="티어" tierColor={tierInfo.color} />
+              </div>
+
+              {/* 티어 설명 칩 */}
+              <div style={{ background: PRIMARY_BG, margin: '0 20px 16px', borderRadius: 10, padding: '9px 14px', fontSize: 13, color: PRIMARY, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Trophy size={14} color={PRIMARY} />
+                {tierInfo.desc}
+              </div>
+
+              <HRule />
             </div>
 
-            {/* 업로딩 인디케이터 */}
-            {uploading && (
-              <p style={{ textAlign: 'center', fontSize: 12, color: PRIMARY, padding: '8px 0' }}>사진 업로드 중...</p>
-            )}
+            {/* ── 프로필 관리 ── */}
+            <SectionLabel>프로필 관리</SectionLabel>
+            <HRule />
+            <FlatMenuItem Icon={Camera}     label="프로필 편집"     onClick={() => navigate('/mypage/edit')} />
+            <HRule />
+            <FlatMenuItem Icon={Eye}        label="프로필 미리보기" onClick={() => navigate(`/partner/${uid}`)} />
+            <HRule />
+            <FlatMenuItem Icon={UserSearch} label="매칭 선호도 설정" onClick={() => navigate('/mypage/preferences')} />
+            <HRule />
+            <FlatMenuItem Icon={Sliders}    label="랭크 현황 상세"  onClick={() => navigate('/mypage/rank')} />
+            <HRule />
 
-            {/* ── 프로필 관리 메뉴 ── */}
-            <Card style={{ margin: '12px 16px 0' }}>
-              <MenuItem icon="📷" label="프로필 사진 변경"  sub="내 매력을 보여주세요"
-                onClick={() => navigate('/mypage/edit')} />
-              <Divider />
-              <MenuItem icon="✏️" label="자기소개 수정"
-                sub={profile?.bio ? profile.bio.slice(0, 22) + (profile.bio.length > 22 ? '…' : '') : '나를 소개해 보세요'}
-                onClick={() => navigate('/mypage/edit')} />
-              <Divider />
-              <MenuItem icon="🎯" label="매칭 선호도 설정"  sub="원하는 매칭 조건을 정해보세요"
-                onClick={() => navigate('/mypage/preferences')} />
-              <Divider />
-              <MenuItem icon="🏆" label="랭크 현황 상세"
-                sub={`현재 ${tier} · ${tierInfo.desc}`}
-                onClick={() => navigate('/mypage/rank')} />
-            </Card>
-
-            {/* ── 매칭 토글 설정 ── */}
-            <Card style={{ margin: '10px 16px 0' }}>
-              <ToggleItem
-                icon="🎓" label="같은 학과 매칭 제외" sub="같은 학과 학생과는 매칭되지 않아요"
-                value={prefs.sameDepExclude}    onToggle={() => handleToggle('sameDepExclude')} />
-              <Divider />
-              <ToggleItem
-                icon="🏛️" label="같은 학교 매칭 제외" sub="같은 학교 학생과는 매칭되지 않아요"
-                value={prefs.sameSchoolExclude} onToggle={() => handleToggle('sameSchoolExclude')} />
-              <Divider />
-              <ToggleItem
-                icon="🔔" label="푸시 알림" sub="매칭 결과, 메시지 등을 알려드려요"
-                value={prefs.pushEnabled}       onToggle={() => handleToggle('pushEnabled')} />
-            </Card>
-
-            {/* ── My 활동 ── */}
-            <p style={{ padding: '18px 20px 8px', fontSize: 16, fontWeight: 800, color: '#111' }}>My 활동</p>
-            <Card style={{ margin: '0 16px' }}>
-              {/* 랭크 요약 */}
-              <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', padding: '16px 0 14px' }}>
-                <StatItem value={typeof score === 'number' ? Number(score).toFixed(2) : '-'} label="평균 점수" />
-                <div style={{ width: 1, background: '#EEF0F6' }} />
-                <StatItem value={evalCnt} label="받은 평가" />
-                <div style={{ width: 1, background: '#EEF0F6' }} />
-                <StatItem value={tierInfo.emoji} label={tier} />
-              </div>
-              <div style={{ background: PRIMARY_BG, margin: '0 16px 16px', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: PRIMARY, fontWeight: 500 }}>
-                💡 {tierInfo.desc}
-              </div>
-
-              <Divider />
-
-              {/* 활동 아이콘 그리드 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                <ActivityBtn icon="👁️" label="프로필 미리보기" onClick={() => navigate('/mypage/rank')} />
-                <ActivityBtn icon="💘" label="매칭 횟수"       onClick={() => navigate('/mypage/rank')} />
-                <ActivityBtn icon="💬" label="채팅"            onClick={() => navigate('/chat')} />
-                <ActivityBtn icon="⭐" label="받은 평가"       onClick={() => navigate('/mypage/rank')} />
-              </div>
-            </Card>
+            {/* ── 매칭 설정 ── */}
+            <SectionLabel>매칭 설정</SectionLabel>
+            <HRule />
+            <FlatToggleItem label="같은 학과 매칭 제외" value={prefs.sameDepExclude} onToggle={() => handleToggle('sameDepExclude')} />
+            <HRule />
+            <FlatToggleItem label="푸시 알림" value={prefs.pushEnabled} onToggle={() => handleToggle('pushEnabled')} />
+            <HRule />
 
             {/* ── 로그아웃 ── */}
-            <Card style={{ margin: '10px 16px 0' }}>
+            <div style={{ margin: '16px 20px 0' }}>
               <button onClick={handleLogout} style={s.logoutBtn}>
+                <LogOut size={16} color="#e74c3c" strokeWidth={2} />
                 로그아웃
               </button>
-            </Card>
+            </div>
 
-            <div style={{ height: 20 }} />
+            <div style={{ height: 24 }} />
           </>
         )}
       </div>
@@ -221,50 +185,35 @@ export default function MyPage() {
   );
 }
 
-// ── 서브 컴포넌트 ──────────────────────────────────────────────────────
+// ── 공통 가로선 ────────────────────────────────────────────────────────
+function HRule() {
+  return <div style={{ height: 1, background: '#F0F2F5' }} />;
+}
 
-function Card({ children, style }) {
+// ── 섹션 레이블 ──────────────────────────────────────────────────────
+function SectionLabel({ children }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 2px 12px rgba(0,48,135,0.07)', overflow: 'hidden', ...style }}>
+    <p style={{ padding: '20px 20px 6px', fontSize: 12, fontWeight: 700, color: '#999', letterSpacing: 0.5, textTransform: 'uppercase' }}>
       {children}
-    </div>
+    </p>
   );
 }
 
-function Divider() {
-  return <div style={{ height: 1, background: '#F0F2F8', margin: '0 16px' }} />;
-}
-
-function MenuItem({ icon, label, sub, onClick }) {
+// ── 플랫 메뉴 아이템 (아이콘 우측, 메인 컬러) ─────────────────────────
+function FlatMenuItem({ Icon, label, onClick }) {
   return (
-    <button onClick={onClick} style={s.menuItem}>
-      <span style={s.menuIcon}>{icon}</span>
-      <div style={{ flex: 1, textAlign: 'left' }}>
-        <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>{label}</p>
-        <p style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</p>
-      </div>
-      <ChevronIcon />
+    <button onClick={onClick} style={s.flatRow}>
+      <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#111', margin: 0, textAlign: 'left' }}>{label}</p>
+      <Icon size={20} color={PRIMARY} strokeWidth={2} style={{ flexShrink: 0, display: 'block' }} />
     </button>
   );
 }
 
-function ToggleItem({ icon, label, sub, value, onToggle }) {
+// ── 플랫 토글 아이템 ──────────────────────────────────────────────────
+function FlatToggleItem({ label, value, onToggle }) {
   return (
-    <div style={{ ...s.menuItem, cursor: 'default' }}>
-      <span style={s.menuIcon}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>{label}</p>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
-            color: value ? PRIMARY : '#aaa',
-            background: value ? PRIMARY_BG : '#F0F0F0',
-          }}>
-            {value ? 'ON' : 'OFF'}
-          </span>
-        </div>
-        <p style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</p>
-      </div>
+    <div style={{ ...s.flatRow, cursor: 'default' }}>
+      <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#111', margin: 0 }}>{label}</p>
       <Toggle value={value} onToggle={onToggle} />
     </div>
   );
@@ -272,53 +221,18 @@ function ToggleItem({ icon, label, sub, value, onToggle }) {
 
 function Toggle({ value, onToggle }) {
   return (
-    <button onClick={onToggle} style={{
-      width: 48, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
-      background: value ? PRIMARY : '#D8DCE6',
-      position: 'relative', transition: 'background .2s', flexShrink: 0,
-    }}>
-      <div style={{
-        position: 'absolute', top: 3, width: 22, height: 22, borderRadius: '50%',
-        background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-        left: value ? 23 : 3, transition: 'left .2s',
-      }} />
+    <button onClick={onToggle} style={{ width: 48, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer', background: value ? PRIMARY : '#D8DCE6', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.25)', left: value ? 23 : 3, transition: 'left .2s' }} />
     </button>
   );
 }
 
-function StatItem({ value, label }) {
+function StatItem({ value, label, tierColor }) {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: 24, fontWeight: 800, color: PRIMARY }}>{value}</p>
-      <p style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{label}</p>
+    <div style={{ textAlign: 'center', flex: 1 }}>
+      <p style={{ fontSize: 22, fontWeight: 800, color: tierColor || PRIMARY }}>{value}</p>
+      <p style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>{label}</p>
     </div>
-  );
-}
-
-function ActivityBtn({ icon, label, onClick }) {
-  return (
-    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '14px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-      <span style={{ fontSize: 22, color: PRIMARY }}>{icon}</span>
-      <span style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>{label}</span>
-    </button>
-  );
-}
-
-// ── 아이콘 ────────────────────────────────────────────────────────────
-function SettingsIcon({ color }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0C4D0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
   );
 }
 
@@ -326,25 +240,19 @@ function ChevronIcon() {
 const s = {
   iconBtn: {
     background: PRIMARY_BG, border: 'none', cursor: 'pointer',
-    width: 40, height: 40, borderRadius: '50%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+    width: 38, height: 38, borderRadius: '50%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  rankBadge: {
-    position: 'absolute', top: 14, right: 14,
-    background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
-    borderRadius: 20, padding: '5px 12px',
-    display: 'flex', alignItems: 'center', gap: 5,
-  },
-  menuItem: {
+  flatRow: {
     width: '100%', background: 'none', border: 'none', cursor: 'pointer',
     display: 'flex', alignItems: 'center', gap: 14,
-    padding: '14px 16px',
+    padding: '13px 20px',
   },
-  menuIcon: { fontSize: 22, width: 30, textAlign: 'center', flexShrink: 0 },
   logoutBtn: {
-    width: '100%', padding: '14px 16px', background: 'none',
-    border: 'none', cursor: 'pointer', color: '#e74c3c',
-    fontSize: 15, fontWeight: 600, textAlign: 'left',
+    width: '100%', padding: '14px 16px',
+    background: '#FFF5F5', border: '1px solid #FFE0E0',
+    borderRadius: 14, cursor: 'pointer',
+    color: '#e74c3c', fontSize: 15, fontWeight: 600,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
 };

@@ -12,7 +12,7 @@ USE donga_dating;
 -- ──────────────────────────────────────────
 -- 1. 사용자 (로그인/회원가입은 별도 담당자)
 -- ──────────────────────────────────────────
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id       BIGINT          NOT NULL AUTO_INCREMENT,
     email         VARCHAR(100)    NOT NULL COMMENT '동아대 이메일 (@donga.ac.kr)',
     password      VARCHAR(255)    NOT NULL COMMENT 'BCrypt 해시',
@@ -48,7 +48,7 @@ CREATE TABLE users (
 -- ──────────────────────────────────────────
 -- 2. 이메일 인증 토큰 (VerificationToken 엔티티 기반)
 -- ──────────────────────────────────────────
-CREATE TABLE verification_tokens (
+CREATE TABLE IF NOT EXISTS verification_tokens (
     id BIGINT NOT NULL AUTO_INCREMENT,
     token VARCHAR(100) NOT NULL COMMENT 'UUID 인증 토큰',
     expiry_date TIMESTAMP NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE verification_tokens (
 -- ──────────────────────────────────────────
 -- 3. 프로필 사진
 -- ──────────────────────────────────────────
-CREATE TABLE user_photos (
+CREATE TABLE IF NOT EXISTS user_photos (
     photo_id      BIGINT          NOT NULL AUTO_INCREMENT,
     user_id       BIGINT          NOT NULL,
     file_name     VARCHAR(255)    NOT NULL COMMENT '서버 저장 파일명 (UUID 기반)',
@@ -84,7 +84,7 @@ CREATE TABLE user_photos (
 --    · GENERAL : 일반 매칭
 --    · RANK    : 랭크 매칭 (rank_tier가 같거나 인접한 상대와 매칭)
 -- ──────────────────────────────────────────
-CREATE TABLE match_queue (
+CREATE TABLE IF NOT EXISTS match_queue (
     queue_id      BIGINT          NOT NULL AUTO_INCREMENT,
     user_id       BIGINT          NOT NULL,
     match_type    ENUM('GENERAL','RANK','LECTURE') NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE match_queue (
 --    · male_user_id / female_user_id 로 성별 구분 보장
 --    · status: ACTIVE → 둘 다 평가 완료 시 EVALUATED, 기간 만료 시 EXPIRED
 -- ──────────────────────────────────────────
-CREATE TABLE matches (
+CREATE TABLE IF NOT EXISTS matches (
     match_id        BIGINT    NOT NULL AUTO_INCREMENT,
     male_user_id    BIGINT    NOT NULL,
     female_user_id  BIGINT    NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE matches (
 --    · 매칭 1건당 evaluator → evaluated 방향으로 1건만 허용
 --    · score 1~5점, 평균이 users.rank_score 에 반영됨
 -- ──────────────────────────────────────────
-CREATE TABLE evaluations (
+CREATE TABLE IF NOT EXISTS evaluations (
     evaluation_id   BIGINT    NOT NULL AUTO_INCREMENT,
     match_id        BIGINT    NOT NULL,
     evaluator_id    BIGINT    NOT NULL COMMENT '평가자',
@@ -214,7 +214,7 @@ DELIMITER ;
 --    · 매칭된 사용자만 채팅 가능
 --    · 채팅방 상태 관리 (ACTIVE / CLOSED / BLOCKED)
 -- =====================================================
-    CREATE TABLE chat_rooms (
+    CREATE TABLE IF NOT EXISTS chat_rooms (
                                 room_id       BIGINT NOT NULL AUTO_INCREMENT,
                                 match_id      BIGINT NOT NULL,
 
@@ -242,7 +242,7 @@ DELIMITER ;
 --     · 읽음 여부 관리
 --     · 삭제 여부 관리 (내 화면에서만 삭제용)
 -- =====================================================
-    CREATE TABLE chat_messages (
+    CREATE TABLE IF NOT EXISTS chat_messages (
                                    message_id     BIGINT NOT NULL AUTO_INCREMENT,
 
                                    room_id        BIGINT NOT NULL,
@@ -278,7 +278,7 @@ DELIMITER ;
 --     · 욕설 / 스팸 / 부적절한 사진 등 신고 가능
 --     · 신고 기록 저장
 -- =====================================================
-    CREATE TABLE reports (
+    CREATE TABLE IF NOT EXISTS reports (
                              report_id       BIGINT NOT NULL AUTO_INCREMENT,
 
                              reporter_id     BIGINT NOT NULL COMMENT '신고한 사용자',
@@ -310,7 +310,7 @@ DELIMITER ;
 --     · 특정 사용자 차단 가능
 --     · 차단 시 채팅 및 상호작용 제한
 -- =====================================================
-    CREATE TABLE blocks (
+    CREATE TABLE IF NOT EXISTS blocks (
                             block_id        BIGINT NOT NULL AUTO_INCREMENT,
 
                             blocker_id      BIGINT NOT NULL COMMENT '차단한 사용자',
@@ -342,7 +342,7 @@ DELIMITER ;
 --     · 양쪽 수락 시 matches 테이블에 ACTIVE 매칭 생성
 --     · 거절/만료 시 REJECTED/EXPIRED 처리
 -- =====================================================
-CREATE TABLE free_time_requests (
+CREATE TABLE IF NOT EXISTS free_time_requests (
     request_id     BIGINT    NOT NULL AUTO_INCREMENT,
     male_user_id   BIGINT    NOT NULL,
     female_user_id BIGINT    NOT NULL,
@@ -369,7 +369,7 @@ CREATE TABLE free_time_requests (
 --     · 사용자가 시간표 이미지를 업로드하면 FastAPI 분석 후 저장
 --     · 업로드마다 기존 데이터 전체 교체 (upsert 불필요)
 -- =====================================================
-CREATE TABLE free_time_slots (
+CREATE TABLE IF NOT EXISTS free_time_slots (
     slot_id      BIGINT    NOT NULL AUTO_INCREMENT,
     user_id      BIGINT    NOT NULL,
     day_of_week  ENUM('MON','TUE','WED','THU','FRI') NOT NULL COMMENT '요일',
@@ -387,7 +387,7 @@ CREATE TABLE free_time_slots (
 -- =====================================================
 -- 15. 사용자 좋아요 기능
 -- =====================================================
-CREATE TABLE likes (
+CREATE TABLE IF NOT EXISTS likes (
     like_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
     sender_id   BIGINT NOT NULL,
     receiver_id BIGINT NOT NULL,
@@ -399,6 +399,6 @@ CREATE TABLE likes (
     CONSTRAINT chk_status CHECK (status IN ('PENDING','ACCEPTED','REJECTED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_likes_sender   ON likes(sender_id);
-CREATE INDEX idx_likes_receiver ON likes(receiver_id);
-CREATE INDEX idx_likes_status   ON likes(status);
+CREATE INDEX IF NOT EXISTS idx_likes_sender   ON likes(sender_id);
+CREATE INDEX IF NOT EXISTS idx_likes_receiver ON likes(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_likes_status   ON likes(status);

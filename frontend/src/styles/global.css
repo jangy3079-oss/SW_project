@@ -6,7 +6,7 @@
   --purple: #6C5CE7;
   --purple-light: #EEE9FF;
   --green: #00B894;
-  --bg: #F5F5F7;
+  --bg: #FFFFFF;
   --white: #FFFFFF;
   --text: #1A1A1A;
   --sub: #888888;
@@ -265,3 +265,15 @@ body {
   letter-spacing: 0.5px;
   margin: 24px 0 8px;
 }
+
+/* ── 페이지 / 탭 전환 애니메이션 ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tabEnter {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.page-transition  { animation: pageEnter 0.22s ease; }
+.tab-transition   { animation: tabEnter  0.18s ease; }

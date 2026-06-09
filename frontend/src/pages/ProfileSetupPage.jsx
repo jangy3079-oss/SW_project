@@ -2,19 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, photo as photoApi } from '../api/client';
+import { Camera, PenLine, Lightbulb, Leaf, GraduationCap, ClipboardList, Sparkles, X } from 'lucide-react';
 
 // ── 상수 ──────────────────────────────────────────────────
-const PRIMARY    = '#003087';   // Pantone 282C
+const PRIMARY    = '#003087';
 const PRIMARY_BG = '#EAF0FB';
 
 const STEPS = [
-  { id: 1, icon: '📸', title: '사진 등록',    desc: '동아대 친구들에게 나를 소개해요' },
-  { id: 2, icon: '✍️', title: '자기소개',     desc: '나만의 이야기를 들려주세요' },
-  { id: 3, icon: '💡', title: '관심사',       desc: '공통 취미를 가진 상대를 만나요' },
-  { id: 4, icon: '🌱', title: '라이프스타일', desc: '나의 생활 패턴을 알려주세요' },
+  { id: 1, Icon: Camera,     title: '사진 등록',    desc: '동아대 친구들에게 나를 소개해요' },
+  { id: 2, Icon: PenLine,    title: '자기소개',     desc: '나만의 이야기를 들려주세요' },
+  { id: 3, Icon: Lightbulb,  title: '관심사',       desc: '공통 취미를 가진 상대를 만나요' },
+  { id: 4, Icon: Leaf,       title: '라이프스타일', desc: '나의 생활 패턴을 알려주세요' },
 ];
 
-// ── 관심사 데이터 ─────────────────────────────────────────
+// ── 관심사 데이터 (이모지는 콘텐츠 데이터이므로 유지) ───────
 const INTERESTS_DATA = {
   '🏃 운동·스포츠': [
     { emoji: '💪', label: '헬스' },      { emoji: '🏃', label: '러닝' },
@@ -49,7 +50,6 @@ const INTERESTS_DATA = {
   ],
 };
 
-// ── Bio 추가 질문 목록 ────────────────────────────────────
 const EXTRA_QUESTIONS = [
   '인생의 목표가 있다면',
   '이런 사람에게 호감을 느껴요',
@@ -59,22 +59,21 @@ const EXTRA_QUESTIONS = [
   '요즘 관심있는 것',
 ];
 
-// ── 내 정보 옵션 ──────────────────────────────────────────
 const INFO_OPTIONS = {
   smoking: {
     label: '흡연', options: [
-      { value: 'no_smoke',           label: '비흡연 🚭' },
-      { value: 'smoke',              label: '흡연 🚬' },
-      { value: 'vape',               label: '전자담배 💨' },
-      { value: 'only_when_drinking', label: '술 마실 때만 🥂' },
+      { value: 'no_smoke',           label: '비흡연' },
+      { value: 'smoke',              label: '흡연' },
+      { value: 'vape',               label: '전자담배' },
+      { value: 'only_when_drinking', label: '술 마실 때만' },
     ],
   },
   drinking: {
     label: '음주 스타일', options: [
-      { value: 'party',         label: '알코올 요정 🍻' },
-      { value: 'moderate',      label: '적당히 즐김 🍺' },
-      { value: 'sober',         label: '알쓰/논알콜 🥤' },
-      { value: 'wine_highball', label: '와인/하이볼파 🍷' },
+      { value: 'party',         label: '알코올 요정' },
+      { value: 'moderate',      label: '적당히 즐김' },
+      { value: 'sober',         label: '알쓰/논알콜' },
+      { value: 'wine_highball', label: '와인/하이볼파' },
     ],
   },
   relationship_goal: {
@@ -86,10 +85,10 @@ const INFO_OPTIONS = {
   },
   weekend: {
     label: '주말 활동', options: [
-      { value: 'outgoing',    label: '프로 밖돌이/밖순이 🗺️' },
-      { value: 'local',       label: '하단/로컬 지박령 🏘️' },
-      { value: 'selective',   label: '선택적 외출파 🏠' },
-      { value: 'home_master', label: '집돌이/집순이 마스터 🎮' },
+      { value: 'outgoing',    label: '프로 밖돌이/밖순이' },
+      { value: 'local',       label: '하단/로컬 지박령' },
+      { value: 'selective',   label: '선택적 외출파' },
+      { value: 'home_master', label: '집돌이/집순이 마스터' },
     ],
   },
 };
@@ -108,13 +107,11 @@ export default function ProfileSetupPage() {
   const fileRef      = useRef(null);
   const uid          = userInfo?.userId;
 
-  // 단계 및 서브뷰
   const [step,        setStep]        = useState(1);
-  const [view,        setView]        = useState('main'); // 'main'|'answer'|'interests'|'mbti'|'field'
+  const [view,        setView]        = useState('main');
   const [activeQIdx,  setActiveQIdx]  = useState(null);
   const [activeField, setActiveField] = useState(null);
 
-  // 데이터
   const [profile,    setProfile]    = useState(null);
   const [photos,     setPhotos]     = useState([]);
   const [prefs,      setPrefs]      = useState({});
@@ -142,20 +139,18 @@ export default function ProfileSetupPage() {
     }).finally(() => setLoading(false));
   }, [uid]);
 
-  // ── 단계 진행 가능 여부 ──────────────────────────────────
   const canProceed = () => {
     if (step === 1) return photos.length >= 1;
     if (step === 2) return bioAnswers[0]?.answer?.trim().length > 0;
-    return true; // step 3, 4 선택 사항
+    return true;
   };
 
-  // ── 완료 ────────────────────────────────────────────────
   const handleComplete = async () => {
     if (!uid) return;
     setSaving(true);
     try {
-      const mainBio    = bioAnswers.find(b => b.required)?.answer || '';
-      const fullPrefs  = { ...prefs, interests, bio_answers: bioAnswers };
+      const mainBio   = bioAnswers.find(b => b.required)?.answer || '';
+      const fullPrefs = { ...prefs, interests, bio_answers: bioAnswers };
       await Promise.all([
         userApi.updateBio(uid, mainBio),
         userApi.updatePreferences(uid, fullPrefs),
@@ -173,7 +168,6 @@ export default function ProfileSetupPage() {
     else          await handleComplete();
   };
 
-  // ── 사진 업로드/삭제 ─────────────────────────────────────
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || photos.length >= 6) return;
@@ -191,34 +185,35 @@ export default function ProfileSetupPage() {
     } catch (err) { alert(err.message); }
   };
 
-  // ── MBTI 토글 ────────────────────────────────────────────
   const toggleMbti = (pairIdx, char) => {
     const cur = (prefs.mbti || '????').split('');
     cur[pairIdx] = char;
     setPrefs(prev => ({ ...prev, mbti: cur.join('') }));
   };
 
-  // ─────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div className="spinner" />
     </div>
   );
 
-  // ══ 서브 뷰: 답변 작성 ══════════════════════════════════
+  // ══ 서브 뷰: 답변 작성 ══
   if (view === 'answer' && activeQIdx !== null) {
     const qa = bioAnswers[activeQIdx];
     return (
       <div style={s.screen}>
         <SubHeader
-          left={<Btn style={{ color: '#888' }} onClick={() => setView('main')}>✕</Btn>}
+          left={<Btn onClick={() => setView('main')}><X size={18} color="#888" /></Btn>}
           title="답변 작성"
           right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={() => setView('main')}>완료</Btn>}
         />
         <div style={{ padding: '12px 20px 12px', borderBottom: '1px solid #F0F0F0' }}>
-          <p style={{ fontSize: 13, color: '#888' }}>
-            🎓 학부 (대학생) · {profile?.department || '동아대학교'}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <GraduationCap size={14} color="#888" />
+            <p style={{ fontSize: 13, color: '#888' }}>
+              학부 (대학생) · {profile?.department || '동아대학교'}
+            </p>
+          </div>
         </div>
         <div style={{ padding: '18px 20px 8px', display: 'flex', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{qa.question}</p>
@@ -254,7 +249,7 @@ export default function ProfileSetupPage() {
     );
   }
 
-  // ══ 서브 뷰: 관심사 선택 ════════════════════════════════
+  // ══ 서브 뷰: 관심사 선택 ══
   if (view === 'interests') {
     return (
       <div style={s.screen}>
@@ -317,7 +312,7 @@ export default function ProfileSetupPage() {
     );
   }
 
-  // ══ 서브 뷰: MBTI ════════════════════════════════════════
+  // ══ 서브 뷰: MBTI ══
   if (view === 'mbti') {
     const mbti = (prefs.mbti || '????').split('');
     return (
@@ -366,7 +361,7 @@ export default function ProfileSetupPage() {
     );
   }
 
-  // ══ 서브 뷰: 단일 필드 선택 ══════════════════════════════
+  // ══ 서브 뷰: 단일 필드 선택 ══
   if (view === 'field' && activeField) {
     const meta = INFO_OPTIONS[activeField];
     const cur  = prefs[activeField];
@@ -400,16 +395,16 @@ export default function ProfileSetupPage() {
     );
   }
 
-  // ══ 메인: 단계별 위자드 ══════════════════════════════════
-  const mbtiDisplay = prefs.mbti && !prefs.mbti.includes('?') ? prefs.mbti : null;
+  // ══ 메인 위자드 ══
+  const stepData     = STEPS[step - 1];
+  const StepIcon     = stepData.Icon;
+  const mbtiDisplay  = prefs.mbti && !prefs.mbti.includes('?') ? prefs.mbti : null;
 
   return (
     <div style={s.screen}>
 
-      {/* ── 상단: 프로그레스 + 단계 헤더 ── */}
+      {/* 상단 프로그레스 + 헤더 */}
       <div style={{ padding: '52px 24px 24px', background: '#fff' }}>
-
-        {/* 4칸 프로그레스 바 */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
           {STEPS.map(st => (
             <div
@@ -423,24 +418,32 @@ export default function ProfileSetupPage() {
           ))}
         </div>
 
-        {/* 단계 번호 */}
         <p style={{ fontSize: 13, color: PRIMARY, fontWeight: 700, marginBottom: 6 }}>
           STEP {step} / {STEPS.length}
         </p>
 
-        {/* 아이콘 + 제목 */}
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: '#111', lineHeight: 1.3, margin: 0 }}>
-          {STEPS[step - 1].icon} {STEPS[step - 1].title}
-        </h1>
-        <p style={{ fontSize: 14, color: '#888', marginTop: 8 }}>
-          {STEPS[step - 1].desc}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 16,
+            background: PRIMARY_BG,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <StepIcon size={28} color={PRIMARY} strokeWidth={1.8} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: 0 }}>
+              {stepData.title}
+            </h1>
+            <p style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{stepData.desc}</p>
+          </div>
+        </div>
       </div>
 
-      {/* ── 단계별 콘텐츠 ── */}
+      {/* 단계별 콘텐츠 */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 20 }}>
 
-        {/* ─── STEP 1: 사진 등록 ─── */}
+        {/* STEP 1: 사진 등록 */}
         {step === 1 && (
           <div style={{ padding: '4px 20px 20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -450,7 +453,7 @@ export default function ProfileSetupPage() {
                   style={{ position: 'relative', aspectRatio: '1', borderRadius: 14, overflow: 'hidden', background: '#EEE' }}
                 >
                   <img
-                    src={`/uploads/profiles/${ph.fileName}`}
+                    src={`/uploads/${ph.fileName}`}
                     alt="프로필"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
@@ -469,9 +472,11 @@ export default function ProfileSetupPage() {
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
 
-            {/* 안내 카드 */}
             <div style={{ marginTop: 20, background: PRIMARY_BG, borderRadius: 14, padding: '14px 16px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: PRIMARY, marginBottom: 6 }}>📋 사진 등록 가이드</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <ClipboardList size={14} color={PRIMARY} />
+                <p style={{ fontSize: 13, fontWeight: 700, color: PRIMARY }}>사진 등록 가이드</p>
+              </div>
               <p style={{ fontSize: 12, color: '#555', lineHeight: 1.7 }}>
                 · 첫 번째 사진이 상대방에게 먼저 보여요<br />
                 · 정면 사진을 대표 사진으로 설정해요<br />
@@ -487,7 +492,7 @@ export default function ProfileSetupPage() {
           </div>
         )}
 
-        {/* ─── STEP 2: 자기소개 ─── */}
+        {/* STEP 2: 자기소개 */}
         {step === 2 && (
           <div style={{ padding: '4px 20px 20px' }}>
             {bioAnswers.map((qa, idx) => (
@@ -548,11 +553,9 @@ export default function ProfileSetupPage() {
           </div>
         )}
 
-        {/* ─── STEP 3: 관심사 & MBTI ─── */}
+        {/* STEP 3: 관심사 & MBTI */}
         {step === 3 && (
           <div style={{ padding: '4px 20px 20px' }}>
-
-            {/* 관심사 */}
             <div style={s.sectionCard}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <p style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>관심사</p>
@@ -575,7 +578,7 @@ export default function ProfileSetupPage() {
                           padding: '5px 12px', borderRadius: 20, fontWeight: 600,
                         }}
                       >
-                        {item?.emoji || '✨'} {label}
+                        {item?.emoji} {label}
                       </span>
                     );
                   })}
@@ -587,7 +590,6 @@ export default function ProfileSetupPage() {
               )}
             </div>
 
-            {/* MBTI */}
             <div style={{ ...s.sectionCard, marginTop: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <p style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>성격 유형 (MBTI)</p>
@@ -615,14 +617,13 @@ export default function ProfileSetupPage() {
               )}
             </div>
 
-            {/* 안내 */}
             <p style={{ textAlign: 'center', fontSize: 12, color: '#BDBDBD', marginTop: 16 }}>
               이 단계는 건너뛸 수 있어요. 나중에 마이페이지에서 언제든 수정할 수 있어요.
             </p>
           </div>
         )}
 
-        {/* ─── STEP 4: 라이프스타일 ─── */}
+        {/* STEP 4: 라이프스타일 */}
         {step === 4 && (
           <div style={{ padding: '4px 0 20px' }}>
             {Object.entries(INFO_OPTIONS).map(([key, meta]) => {
@@ -659,10 +660,9 @@ export default function ProfileSetupPage() {
 
       </div>
 
-      {/* ── 하단 네비게이션 ── */}
+      {/* 하단 네비게이션 */}
       <div style={{ padding: '14px 20px 36px', background: '#fff', borderTop: '1px solid #F0F0F0' }}>
 
-        {/* 건너뛰기 (step 3, 4) */}
         {(step === 3 || step === 4) && (
           <button
             onClick={handleNext}
@@ -675,7 +675,6 @@ export default function ProfileSetupPage() {
         )}
 
         <div style={{ display: 'flex', gap: 10 }}>
-          {/* 이전 버튼 */}
           {step > 1 && (
             <button
               onClick={() => setStep(s => s - 1)}
@@ -691,7 +690,6 @@ export default function ProfileSetupPage() {
             </button>
           )}
 
-          {/* 다음/완료 버튼 */}
           <button
             onClick={handleNext}
             disabled={!canProceed() || saving}
@@ -703,11 +701,14 @@ export default function ProfileSetupPage() {
               fontSize: 16, fontWeight: 700,
               opacity: saving ? 0.7 : 1,
               transition: 'background 0.25s, color 0.25s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}
           >
-            {step === 4
-              ? (saving ? '저장 중...' : '🎉 시작하기')
-              : `다음 (${step}/${STEPS.length})`}
+            {step === 4 ? (
+              saving ? '저장 중...' : <><Sparkles size={18} color="#fff" /> 시작하기</>
+            ) : (
+              `다음 (${step}/${STEPS.length})`
+            )}
           </button>
         </div>
       </div>
@@ -716,7 +717,7 @@ export default function ProfileSetupPage() {
   );
 }
 
-// ── 서브 컴포넌트 ────────────────────────────────────────
+// ── 서브 컴포넌트 ──
 function SubHeader({ left, title, right }) {
   return (
     <div style={{
@@ -733,13 +734,12 @@ function SubHeader({ left, title, right }) {
 
 function Btn({ children, onClick, style }) {
   return (
-    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#333', padding: 4, ...style }}>
+    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#333', padding: 4, display: 'flex', alignItems: 'center', ...style }}>
       {children}
     </button>
   );
 }
 
-// ── 스타일 객체 ───────────────────────────────────────────
 const s = {
   screen: {
     width: '100%', maxWidth: 430, margin: '0 auto',

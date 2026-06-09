@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, photo as photoApi } from '../api/client';
+import { GraduationCap } from 'lucide-react';
 
 // ── 상수 ──────────────────────────────────────────────────
 const PRIMARY    = '#003087';   // Pantone 282C
@@ -59,18 +60,18 @@ const EXTRA_QUESTIONS = [
 const INFO_OPTIONS = {
   smoking: {
     label: '흡연', options: [
-      { value: 'no_smoke',           label: '비흡연 🚭' },
-      { value: 'smoke',              label: '흡연 🚬' },
-      { value: 'vape',               label: '전자담배 💨' },
-      { value: 'only_when_drinking', label: '술 마실 때만 🥂' },
+      { value: 'no_smoke',           label: '비흡연' },
+      { value: 'smoke',              label: '흡연' },
+      { value: 'vape',               label: '전자담배' },
+      { value: 'only_when_drinking', label: '술 마실 때만' },
     ],
   },
   drinking: {
     label: '음주 스타일', options: [
-      { value: 'party',        label: '알코올 요정 🍻' },
-      { value: 'moderate',     label: '적당히 즐김 🍺' },
-      { value: 'sober',        label: '알쓰/논알콜 🥤' },
-      { value: 'wine_highball',label: '와인/하이볼파 🍷' },
+      { value: 'party',        label: '알코올 요정' },
+      { value: 'moderate',     label: '적당히 즐김' },
+      { value: 'sober',        label: '알쓰/논알콜' },
+      { value: 'wine_highball',label: '와인/하이볼파' },
     ],
   },
   relationship_goal: {
@@ -82,10 +83,10 @@ const INFO_OPTIONS = {
   },
   weekend: {
     label: '주말 활동', options: [
-      { value: 'outgoing',    label: '프로 밖돌이/밖순이 🗺️' },
-      { value: 'local',       label: '하단/로컬 지박령 🏘️' },
-      { value: 'selective',   label: '선택적 외출파 🏠' },
-      { value: 'home_master', label: '집돌이/집순이 마스터 🎮' },
+      { value: 'outgoing',    label: '프로 밖돌이/밖순이' },
+      { value: 'local',       label: '하단/로컬 지박령' },
+      { value: 'selective',   label: '선택적 외출파' },
+      { value: 'home_master', label: '집돌이/집순이 마스터' },
     ],
   },
 };
@@ -233,7 +234,7 @@ export default function ProfileEditPage() {
         />
         <div style={{ padding: '12px 20px 12px', borderBottom: '1px solid #F0F0F0' }}>
           <p style={{ fontSize: 13, color: '#888' }}>
-            🎓 학부 (대학생) · {profile?.department || '컴퓨터공학과'}
+            <span style={{display:'inline-flex',alignItems:'center',gap:5}}><GraduationCap size={13} color='#888' /> 학부 (대학생) · {profile?.department || '컴퓨터공학과'}</span>
           </p>
         </div>
         <div style={{ padding: '18px 20px 8px', display: 'flex', justifyContent: 'space-between' }}>
@@ -449,7 +450,7 @@ export default function ProfileEditPage() {
             {photos.map((ph, idx) => (
               <div key={ph.photoId} style={{ position: 'relative', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', background: '#EEE' }}>
                 <img
-                  src={`/uploads/profiles/${ph.fileName}`}
+                  src={`/uploads/${ph.fileName}`}
                   alt="프로필"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />

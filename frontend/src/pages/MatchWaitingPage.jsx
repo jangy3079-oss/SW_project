@@ -2,16 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { matching } from '../api/client';
+import { Heart, Trophy, Shuffle, Frown, X } from 'lucide-react';
 
 export default function MatchWaitingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userInfo } = useAuth();
 
-  const matchType = location.state?.type || 'GENERAL'; // 'GENERAL' | 'RANK'
+  const matchType = location.state?.type || 'GENERAL';
   const isRank = matchType === 'RANK';
 
-  const [status, setStatus] = useState('entering'); // entering | waiting | matched | error
+  const [status, setStatus] = useState('entering');
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
   const pollRef = useRef(null);
@@ -31,7 +32,6 @@ export default function MatchWaitingPage() {
         : await matching.enterGeneral(userId);
 
       if (res?.matched) {
-        // 즉시 매칭
         navigate('/match/success', { state: { match: res.match }, replace: true });
       } else {
         setStatus('waiting');
@@ -73,10 +73,15 @@ export default function MatchWaitingPage() {
     <div style={styles.wrap}>
       {/* 헤더 */}
       <div style={styles.header}>
-        <button style={styles.backBtn} onClick={handleCancel}>✕</button>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>
-          {isRank ? '🏆 랭크 매칭' : '🎲 일반 매칭'}
-        </span>
+        <button style={styles.backBtn} onClick={handleCancel}>
+          <X size={20} color="var(--sub)" />
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 16 }}>
+          {isRank
+            ? <><Trophy size={18} color="#6C5CE7" strokeWidth={2} /> 랭크 매칭</>
+            : <><Shuffle size={18} color="#FF6B9D" strokeWidth={2} /> 일반 매칭</>
+          }
+        </div>
         <span />
       </div>
 
@@ -94,7 +99,9 @@ export default function MatchWaitingPage() {
               <div style={{ ...styles.pulse, animationDelay: '0s' }} />
               <div style={{ ...styles.pulse, animationDelay: '.5s' }} />
               <div style={{ ...styles.pulse, animationDelay: '1s' }} />
-              <div style={styles.heartCenter}>💘</div>
+              <div style={styles.heartCenter}>
+                <Heart size={48} color="#FF6B9D" fill="#FF6B9D" />
+              </div>
             </div>
             <h2 style={styles.waitTitle}>상대를 찾는 중...</h2>
             <p style={styles.timer}>{fmt(seconds)}</p>
@@ -109,7 +116,9 @@ export default function MatchWaitingPage() {
 
         {status === 'error' && (
           <>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>😢</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <Frown size={52} color="var(--sub)" strokeWidth={1.5} />
+            </div>
             <p style={styles.msg}>{error}</p>
             <button className="btn btn-primary" onClick={() => navigate('/home')} style={{ maxWidth: 200, marginTop: 16 }}>
               홈으로
@@ -148,9 +157,10 @@ const styles = {
   backBtn: {
     background: 'none',
     border: 'none',
-    fontSize: 18,
     cursor: 'pointer',
-    color: 'var(--sub)',
+    display: 'flex',
+    alignItems: 'center',
+    padding: 4,
   },
   body: {
     flex: 1,
@@ -181,7 +191,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 48,
   },
   waitTitle: { fontSize: 22, fontWeight: 800 },
   timer: { fontSize: 36, fontWeight: 800, color: 'var(--pink)', marginTop: 12 },

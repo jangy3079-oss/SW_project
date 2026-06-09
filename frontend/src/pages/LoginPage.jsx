@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Heart } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -29,7 +30,9 @@ export default function LoginPage() {
     <div className="page page-no-tab" style={{ paddingTop: 60, alignSelf: 'center', width: '100%' }}>
       {/* 로고 */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>💕</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+          <Heart size={48} color="#FF6B9D" fill="#FF6B9D" />
+        </div>
         <h1 style={{ fontSize: 24, fontWeight: 800 }}>동아대 데이팅</h1>
         <p style={{ fontSize: 14, color: 'var(--sub)', marginTop: 4 }}>
           @donga.ac.kr 계정으로 로그인하세요

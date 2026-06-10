@@ -5,24 +5,11 @@ spring:
     password: 1234     # TODO: 각자 로컬 비밀번호로 변경 (절대 커밋 금지)
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  redis:
-    host: localhost
-    port: 6379
-    password: null      # Redis 비밀번호 설정 시 변경
-    timeout: 2000ms
-    database: 0
-    jedis:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-        max-wait: -1ms
-
   mail:
     host: smtp.gmail.com
     port: 587
     username: iriru0818@gmail.com   # TODO: 본인 Gmail 주소로 변경
-    password: pniu ocuh iuks llxc             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
+    password: kxiw wyht qmbj eurp             # TODO: Google 앱 비밀번호로 변경 (절대 커밋 금지)
     properties:
       mail:
         smtp:
@@ -56,6 +43,19 @@ spring:
       enabled: true
     jdbc:
       initialize-database: true    # batch 테이블 자동 생성
+
+  data:
+    redis:
+      host: localhost
+      port: 6373          # 도커 spring-redis 포트에 맞춤
+      timeout: 2000ms
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
 
 # 사진 저장 경로 (로컬)
 file:

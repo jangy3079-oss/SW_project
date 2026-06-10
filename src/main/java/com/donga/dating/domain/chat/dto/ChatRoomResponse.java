@@ -27,6 +27,11 @@ public class ChatRoomResponse {
     private String opponentName;
 
     /**
+     * 상대방 대표 사진 fileName (없으면 null)
+     */
+    private String opponentPhoto;
+
+    /**
      * 최근 메시지
      */
     private String latestMessage;

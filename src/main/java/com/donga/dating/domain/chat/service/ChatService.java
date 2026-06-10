@@ -22,6 +22,8 @@ import com.donga.dating.domain.chat.repository.BlockRepository;
 import com.donga.dating.domain.chat.dto.ReportRequest;
 import com.donga.dating.domain.chat.entity.Report;
 import com.donga.dating.domain.chat.repository.ReportRepository;
+import com.donga.dating.domain.photo.repository.UserPhotoRepository; // 🔥 추가
+import com.donga.dating.domain.photo.entity.UserPhoto;             // 🔥 추가
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +47,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final BlockRepository blockRepository;
     private final ReportRepository reportRepository;
+    private final UserPhotoRepository photoRepository; // 🔥 추가 (생성자 주입 자동 처리됨)
 
     /**
      * 메시지 전송
@@ -212,7 +215,7 @@ public class ChatService {
     /**
      * 내 채팅방 목록 조회
      * - 내가 참여한 모든 채팅방 조회
-     * - 상대방 이름, 최근 메시지, 안 읽은 메시지 개수 포함
+     * - 상대방 이름, 상대방 프로필 사진, 최근 메시지, 안 읽은 메시지 개수 포함
      */
     public List<ChatRoomResponse> getMyChatRooms(Long userId) {
         List<ChatRoom> rooms =
@@ -234,6 +237,13 @@ public class ChatService {
                         opponentName = room.getMatch().getMaleUser().getName();
                     }
 
+                    // 상대방 ID 추출 및 프로필 사진 파일명 조회 블록 추가
+                    Long opponentId = userId.equals(maleUserId) ? femaleUserId : maleUserId;
+                    String opponentPhoto = photoRepository
+                            .findByUser_UserIdAndIsPrimaryTrue(opponentId)
+                            .map(UserPhoto::getFileName)
+                            .orElse(null);
+
                     String latestMessage = chatMessageRepository
                             .findTopByRoomAndIsDeletedFalseOrderByCreatedAtDesc(room)
                             .map(ChatMessage::getContent)
@@ -249,6 +259,7 @@ public class ChatService {
                             .roomId(room.getRoomId())
                             .matchId(room.getMatch().getMatchId())
                             .opponentName(opponentName)
+                            .opponentPhoto(opponentPhoto)
                             .latestMessage(latestMessage)
                             .unreadCount(unreadCount)
                             .status(room.getStatus())

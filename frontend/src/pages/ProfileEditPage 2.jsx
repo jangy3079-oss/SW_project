@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, photo as photoApi } from '../api/client';
 import { GraduationCap } from 'lucide-react';
-import AuthImage from '../components/AuthImage';
 
 // ── 상수 ──────────────────────────────────────────────────
 const PRIMARY    = '#003087';   // Pantone 282C
@@ -163,13 +162,9 @@ export default function ProfileEditPage() {
       }
       if (ph) setPhotos(ph.sort((a, b) => a.photoOrder - b.photoOrder));
       if (pr) {
-        const raw    = pr.preferences || {};
-        const parsed = { ...raw };
-        try { if (raw.interests)   parsed.interests   = JSON.parse(raw.interests);   } catch {}
-        try { if (raw.bio_answers) parsed.bio_answers = JSON.parse(raw.bio_answers); } catch {}
-        setPrefs(parsed);
-        if (Array.isArray(parsed.interests))   setInterests(parsed.interests);
-        if (Array.isArray(parsed.bio_answers)) setBioAnswers(parsed.bio_answers);
+        setPrefs(pr);
+        if (pr.interests)    setInterests(pr.interests);
+        if (pr.bio_answers)  setBioAnswers(pr.bio_answers);
       }
     }).finally(() => setLoading(false));
   }, [uid]);
@@ -181,16 +176,11 @@ export default function ProfileEditPage() {
     if (!uid) return;
     setSaving(true);
     try {
-      const mainBio = bioAnswers.find(b => b.required)?.answer || '';
-      const simplePrefs = {};
-      ['mbti', 'smoking', 'drinking', 'relationship_goal', 'weekend'].forEach(k => {
-        if (prefs[k]) simplePrefs[k] = prefs[k];
-      });
-      simplePrefs.interests   = JSON.stringify(interests);
-      simplePrefs.bio_answers = JSON.stringify(bioAnswers);
+      const mainBio  = bioAnswers.find(b => b.required)?.answer || '';
+      const fullPrefs = { ...prefs, interests, bio_answers: bioAnswers };
       await Promise.all([
         userApi.updateBio(uid, mainBio),
-        userApi.updatePreferences(uid, { preferences: simplePrefs }),
+        userApi.updatePreferences(uid, fullPrefs),
       ]);
       navigate(-1);
     } catch (err) {
@@ -459,7 +449,7 @@ export default function ProfileEditPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
             {photos.map((ph, idx) => (
               <div key={ph.photoId} style={{ position: 'relative', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', background: '#EEE' }}>
-                <AuthImage
+                <img
                   src={`/uploads/${ph.fileName}`}
                   alt="프로필"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}

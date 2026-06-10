@@ -22,10 +22,14 @@ export default function BottomTabBar() {
           <button
             key={tab.path}
             onClick={() => navigate(tab.path)}
-            style={styles.tab}
+            style={{
+              ...styles.tab,
+              color: active ? PRIMARY : '#AAAAAA',
+              transition: 'color 0.25s ease',
+            }}
           >
-            <tab.Icon size={22} color={active ? PRIMARY : '#AAAAAA'} strokeWidth={active ? 2.5 : 1.8} />
-            <span style={{ ...styles.label, color: active ? PRIMARY : 'var(--sub)' }}>
+            <tab.Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+            <span style={styles.label}>
               {tab.label}
             </span>
           </button>
@@ -43,7 +47,7 @@ const styles = {
     transform: 'translateX(-50%)',
     width: '100%',
     maxWidth: 430,
-    height: 68,
+    height: 80,
     background: '#fff',
     borderTop: '1px solid var(--border)',
     display: 'flex',
@@ -62,7 +66,7 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '8px 0',
+    padding: '10px 0',
   },
   label: { fontSize: 11, fontWeight: 600, fontFamily: 'inherit' },
 };

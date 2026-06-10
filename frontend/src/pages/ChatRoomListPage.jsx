@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { chat } from '../api/client';
-import BottomTabBar from '../components/BottomTabBar';
 import { MessageCircle, Bell, User } from 'lucide-react';
+import AuthImage from '../components/AuthImage';
 
 const PRIMARY = '#003087';
 
@@ -81,7 +81,7 @@ export default function ChatRoomListPage() {
                   {/* 아바타 */}
                   <div style={s.avatar}>
                     {room.opponentPhoto ? (
-                      <img src={`/uploads/${room.opponentPhoto}`} alt=""
+                      <AuthImage src={`/uploads/${room.opponentPhoto}`} alt=""
                         style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                       <User size={22} color="#fff" strokeWidth={1.8} />
@@ -122,10 +122,25 @@ export default function ChatRoomListPage() {
                 )}
               </div>
             ))}
+
+            {/* ── 더 많은 매칭 유도 CTA ── */}
+            <div style={s.cta}>
+              <div style={s.ctaIconBox}>
+                <MessageCircle size={24} color={PRIMARY} strokeWidth={1.8} />
+              </div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#888', margin: '12px 0 6px' }}>
+                더 많은 인연을 만나고 싶다면?
+              </p>
+              <p style={{ fontSize: 13, color: '#aaa', margin: '0 0 16px', lineHeight: 1.6, textAlign: 'center' }}>
+                매칭에 참여할수록 더 많은 채팅방이 열려요
+              </p>
+              <button onClick={() => navigate('/home')} style={s.ctaBtn}>
+                매칭 참여하기
+              </button>
+            </div>
           </div>
         )}
       </div>
-      <BottomTabBar />
     </div>
   );
 }
@@ -201,5 +216,33 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+  },
+  cta: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '32px 32px 40px',
+    borderTop: '1px solid #F4F6FA',
+    marginTop: 8,
+  },
+  ctaIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: '50%',
+    background: '#EAF0FB',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaBtn: {
+    background: PRIMARY,
+    color: '#fff',
+    border: 'none',
+    borderRadius: 24,
+    padding: '12px 32px',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    letterSpacing: 0.2,
   },
 };

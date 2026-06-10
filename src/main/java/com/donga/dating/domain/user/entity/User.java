@@ -56,7 +56,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private RankTier rankTier = RankTier.BRONZE;
+    private RankTier rankTier = RankTier.UNRANKED;
 
     @Column(nullable = false)
     @Builder.Default
@@ -125,6 +125,6 @@ public class User {
     }
 
     public enum RankTier {
-        BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
+        UNRANKED, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
     }
 }

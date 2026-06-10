@@ -6,13 +6,20 @@ import {
   GraduationCap, BookOpen, Trophy, Calendar, AlertTriangle,
   RefreshCw, Heart, MessageCircle, Frown, User, CheckCircle, Mail,
 } from 'lucide-react';
-import AuthImage from '../components/AuthImage';
 
 // ── 디자인 토큰 ────────────────────────────────
 const PRIMARY    = '#003087';
 const PRIMARY_BG = '#EAF0FB';
 
 const TIER_LABEL = { BRONZE: 'BRONZE', SILVER: 'SILVER', GOLD: 'GOLD', PLATINUM: 'PLATINUM', DIAMOND: 'DIAMOND' };
+
+// Q&A 섹션
+const EXTRA_QUESTIONS = [
+  { id: 'q0', label: '내 성격의 가장 큰 장점은' },
+  { id: 'q1', label: '연애할 때, 원하는 연락의 빈도는' },
+  { id: 'q2', label: '게임하는 것에 대한 생각은' },
+  { id: 'q3', label: '이상형의 외모는' },
+];
 
 // ── 유틸 ──────────────────────────────────────
 function calcAge(birthDate) {
@@ -32,16 +39,6 @@ function fmtTime(str) {
   const [h, m] = str.split(':');
   const hr = parseInt(h, 10);
   return `${hr < 12 ? '오전' : '오후'} ${hr === 0 ? 12 : hr > 12 ? hr - 12 : hr}:${m}`;
-}
-
-// ── 처리된 FreeTimeRequest를 당일 sessionStorage에 기록 ──
-const DONE_KEY = `freetime_done_${new Date().toDateString()}`;
-function markRequestDone(id) {
-  if (!id) return;
-  try {
-    const arr = JSON.parse(sessionStorage.getItem(DONE_KEY) || '[]');
-    if (!arr.includes(id)) { arr.push(id); sessionStorage.setItem(DONE_KEY, JSON.stringify(arr)); }
-  } catch {}
 }
 
 // ── 메인 컴포넌트 ──────────────────────────────
@@ -81,12 +78,7 @@ export default function PartnerProfilePage() {
         });
         setPhotos(sorted);
       }
-      if (pr.status === 'fulfilled') {
-        const raw    = pr.value?.preferences || {};
-        const parsed = { ...raw };
-        try { if (raw.bio_answers) parsed.bio_answers = JSON.parse(raw.bio_answers); } catch {}
-        setPrefs(parsed);
-      }
+      if (pr.status === 'fulfilled') setPrefs(pr.value);
       setLoading(false);
     });
   }, [partnerId]);
@@ -98,8 +90,6 @@ export default function PartnerProfilePage() {
 
   const handleAccept = async () => {
     setActing('accept');
-    // API 호출 전에 즉시 기록 — 레이스 컨디션(빠른 뒤로가기)으로 인한 중복 좋아요 방지
-    markRequestDone(requestId);
     try {
       if (matchType === 'FREETIME' && requestId) {
         await freeTime.accept(requestId, userId);
@@ -117,8 +107,6 @@ export default function PartnerProfilePage() {
 
   const handleReroll = async () => {
     setActing('reroll');
-    // 거절도 동일하게 기록 — 같은 카드가 다시 뜨지 않도록
-    markRequestDone(requestId);
     try {
       if (matchType === 'FREETIME' && requestId) {
         await freeTime.reject(requestId, userId);
@@ -157,9 +145,9 @@ export default function PartnerProfilePage() {
   }
 
   const age          = calcAge(profile.birthDate);
-  const mbti       = prefs?.mbti;
-  const bioAnswers = Array.isArray(prefs?.bio_answers) ? prefs.bio_answers : [];
-  const hasQA      = bioAnswers.some(b => !b.required && b.answer?.trim());
+  const mbti         = prefs?.mbti;
+  const extraAnswers = prefs?.extraAnswers || {};
+  const hasQA        = EXTRA_QUESTIONS.some(q => extraAnswers[q.id]);
 
   return (
     <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100dvh', background: '#fff', position: 'relative' }}>
@@ -179,7 +167,7 @@ export default function PartnerProfilePage() {
         <div style={s.heroWrap}>
           {photos.length > 0 ? (
             <>
-              <AuthImage
+              <img
                 src={`/uploads/${photos[currentPhoto]?.fileName}`}
                 alt={profile.name}
                 style={s.heroImg}
@@ -265,17 +253,19 @@ export default function PartnerProfilePage() {
         )}
 
         {/* ── Q&A 섹션 ── */}
-        {hasQA && bioAnswers.filter(b => !b.required && b.answer?.trim()).map((qa, i) => {
+        {hasQA && EXTRA_QUESTIONS.map((q, i) => {
+          const answer  = extraAnswers[q.id];
+          if (!answer) return null;
           const midPhoto = photos[i + 1];
           return (
-            <div key={i}>
-              {i > 0 && <div style={s.divider} />}
+            <div key={q.id}>
+              <div style={s.divider} />
               <div style={s.sect}>
-                <h2 style={s.qaQuestion}>{qa.question}</h2>
-                <p style={s.qaAnswer}>{qa.answer}</p>
+                <h2 style={s.qaQuestion}>{q.label}</h2>
+                <p style={s.qaAnswer}>{answer}</p>
               </div>
               {midPhoto && (
-                <AuthImage src={`/uploads/${midPhoto.fileName}`} alt="" style={s.midPhoto} />
+                <img src={`/uploads/${midPhoto.fileName}`} alt="" style={s.midPhoto} />
               )}
             </div>
           );
@@ -422,7 +412,7 @@ const s = {
     background: PRIMARY_BG, padding: '4px 12px', borderRadius: 20,
     display: 'inline-flex', alignItems: 'center',
   },
-  divider: { height: 0 },
+  divider: { height: 8, background: '#F4F6FB' },
   sect: { padding: '16px 24px' },
   sectLabel: { fontSize: 13, color: '#888', fontWeight: 600, marginBottom: 6 },
   gongTime: { fontSize: 18, fontWeight: 800, color: '#111' },

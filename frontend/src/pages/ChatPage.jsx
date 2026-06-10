@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { chat, matching } from '../api/client';
 import { ArrowLeft, MoreVertical, User, Send } from 'lucide-react';
+import AuthImage from '../components/AuthImage';
 
 const PRIMARY = '#003087';
 
@@ -172,7 +173,7 @@ export default function ChatPage() {
               {!mine && (
                 <div style={{ ...s.avatarSm, opacity: showAvatar ? 1 : 0 }}>
                   {room?.opponentPhoto ? (
-                    <img src={`/uploads/${room.opponentPhoto}`} alt=""
+                    <AuthImage src={`/uploads/${room.opponentPhoto}`} alt=""
                       style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
                     <User size={16} color="#fff" />

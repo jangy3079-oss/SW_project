@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { user as userApi, photo as photoApi } from '../api/client';
-import BottomTabBar from '../components/BottomTabBar';
+import { user as userApi, photo as photoApi, freeTime } from '../api/client';
 import {
   Eye, Trophy,
-  Settings, Camera, Sliders, UserSearch, LogOut,
+  Settings, Camera, Sliders, UserSearch, LogOut, CalendarDays,
+  Wrench, Sparkles, RotateCcw, ChevronDown, ChevronUp, Play,
 } from 'lucide-react';
+import { useGems } from '../contexts/GemsContext';
+import AuthImage from '../components/AuthImage';
 
 // ── 상수 ──────────────────────────────────────────────────────────────
 const PRIMARY    = '#003087';
 const PRIMARY_BG = '#EAF0FB';
 
 const TIER_META = {
+  UNRANKED: { label: 'UNRANKED', color: '#666666', desc: '평가 3회부터 티어가 부여돼요' },
   BRONZE:   { label: 'BRONZE',   color: '#CD7F32', desc: '평균 2.0점 이상이면 실버 승급' },
   SILVER:   { label: 'SILVER',   color: '#A8A9AD', desc: '평균 3.0점 이상이면 골드 승급' },
   GOLD:     { label: 'GOLD',     color: '#FFD700', desc: '평균 4.0점 이상이면 플래티넘 승급' },
@@ -31,6 +34,20 @@ export default function MyPage() {
   const [prefs,     setPrefs]     = useState({ sameDepExclude: false, pushEnabled: true });
   const [loading,   setLoading]   = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [devOpen,      setDevOpen]      = useState(false);
+  const [schedulerMsg, setSchedulerMsg] = useState(null);
+  const { gems, addGems, resetGems } = useGems();
+
+  const handleSchedulerRun = async () => {
+    setSchedulerMsg('실행 중...');
+    try {
+      await freeTime.testRun();
+      setSchedulerMsg('✅ 공강 매칭 스케줄러 실행 완료');
+    } catch (e) {
+      setSchedulerMsg(`❌ 실패: ${e?.message || '오류'}`);
+    }
+    setTimeout(() => setSchedulerMsg(null), 4000);
+  };
 
   const uid = userInfo?.userId;
 
@@ -48,9 +65,9 @@ export default function MyPage() {
   }, [uid]);
 
   const primaryPhoto = photos.find(p => p.isPrimary) || photos[0];
-  const tier     = profile?.rankTier || userInfo?.rankTier || 'BRONZE';
-  const tierInfo = TIER_META[tier] || TIER_META.BRONZE;
-  const score    = profile?.rankScore ?? '-';
+  const tier     = profile?.rankTier || userInfo?.rankTier || 'UNRANKED';
+  const tierInfo = TIER_META[tier] || TIER_META.UNRANKED;
+  const score    = tier === 'UNRANKED' ? '-.--' : (profile?.rankScore ?? '-');
   const evalCnt  = profile?.evalCount ?? 0;
   const name       = profile?.name || userInfo?.name || '이름 없음';
   const department = profile?.department || userInfo?.department || '';
@@ -108,7 +125,7 @@ export default function MyPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 {primaryPhoto ? (
-                  <img src={`/uploads/${primaryPhoto.fileName}`} alt="프로필"
+                  <AuthImage src={`/uploads/${primaryPhoto.fileName}`} alt="프로필"
                     style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY} 0%, #1a5aaa 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -159,6 +176,8 @@ export default function MyPage() {
             <HRule />
             <FlatMenuItem Icon={Sliders}    label="랭크 현황 상세"  onClick={() => navigate('/mypage/rank')} />
             <HRule />
+            <FlatMenuItem Icon={CalendarDays} label="시간표 관리" onClick={() => navigate('/mypage/timetable')} />
+            <HRule />
 
             {/* ── 매칭 설정 ── */}
             <SectionLabel>매칭 설정</SectionLabel>
@@ -176,11 +195,111 @@ export default function MyPage() {
               </button>
             </div>
 
+            {/* ── 개발자 도구 ── */}
+            <div style={{ margin: '16px 20px 0' }}>
+              <button
+                onClick={() => setDevOpen(v => !v)}
+                style={{
+                  width: '100%', padding: '12px 16px',
+                  background: '#1a1a2e', borderRadius: 14,
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'inherit',
+                }}
+              >
+                <Wrench size={16} color="#7DF9FF" strokeWidth={2} />
+                <span style={{ flex: 1, textAlign: 'left', fontSize: 14, fontWeight: 700, color: '#7DF9FF' }}>
+                  개발자 도구
+                </span>
+                {devOpen
+                  ? <ChevronUp size={16} color="#7DF9FF" />
+                  : <ChevronDown size={16} color="#7DF9FF" />
+                }
+              </button>
+
+              {devOpen && (
+                <div style={{
+                  background: '#12121f', borderRadius: '0 0 14px 14px',
+                  padding: '16px', marginTop: -4,
+                  border: '1px solid #2a2a4a', borderTop: 'none',
+                }}>
+                  {/* 재화 잔액 */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Sparkles size={18} color="#FFD700" strokeWidth={2} />
+                      <span style={{ fontSize: 13, color: '#aaa', fontWeight: 600 }}>재화 잔액</span>
+                    </div>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: '#FFD700' }}>{gems}</span>
+                  </div>
+
+                  {/* 충전 버튼 */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    {[10, 50, 100].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => addGems(n)}
+                        style={{
+                          flex: 1, padding: '10px 0',
+                          background: '#2a2a4a', border: '1px solid #3a3a6a',
+                          borderRadius: 10, cursor: 'pointer',
+                          color: '#7DF9FF', fontSize: 14, fontWeight: 700,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        +{n}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 초기화 */}
+                  <button
+                    onClick={resetGems}
+                    style={{
+                      width: '100%', padding: '9px',
+                      background: 'none', border: '1px solid #3a2a2a',
+                      borderRadius: 10, cursor: 'pointer',
+                      color: '#FF6B6B', fontSize: 13, fontWeight: 600,
+                      fontFamily: 'inherit',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <RotateCcw size={13} color="#FF6B6B" />
+                    초기화 (0으로)
+                  </button>
+
+                  {/* 구분선 */}
+                  <div style={{ height: 1, background: '#2a2a4a', margin: '14px 0' }} />
+
+                  {/* 스케줄러 실행 */}
+                  <p style={{ fontSize: 11, color: '#555', fontWeight: 700, marginBottom: 8, letterSpacing: 0.5 }}>
+                    SCHEDULER
+                  </p>
+                  <button
+                    onClick={handleSchedulerRun}
+                    style={{
+                      width: '100%', padding: '10px',
+                      background: '#1a2a1a', border: '1px solid #2a4a2a',
+                      borderRadius: 10, cursor: 'pointer',
+                      color: '#4ADE80', fontSize: 13, fontWeight: 600,
+                      fontFamily: 'inherit',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <Play size={13} color="#4ADE80" fill="#4ADE80" />
+                    공강 매칭 스케줄러 수동 실행
+                  </button>
+                  {schedulerMsg && (
+                    <p style={{ fontSize: 12, color: '#aaa', marginTop: 8, textAlign: 'center' }}>
+                      {schedulerMsg}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div style={{ height: 24 }} />
           </>
         )}
       </div>
-      <BottomTabBar />
     </div>
   );
 }

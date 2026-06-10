@@ -4,9 +4,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { timetable as timetableApi, freeTime } from '../api/client';
 import BottomTabBar from '../components/BottomTabBar';
 import {
-  Coffee, Camera, Calendar, RefreshCw, Inbox, User, Info, Wrench,
-  CheckCircle, XCircle, ChevronLeft,
+  Camera, Calendar, RefreshCw, Inbox, User, Wrench,
+  CheckCircle, ChevronLeft, Shuffle,
 } from 'lucide-react';
+
+const PRIMARY     = '#003087';
+const PRIMARY_BG  = '#EAF0FB';
+
+const MAX_REROLL = 3;   // 남성 리롤 최대 횟수
+const MALE_LIMIT = 2;   // 남성에게 보여줄 후보 수
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 
 export default function FreeTimeMatchingPage() {
   const navigate = useNavigate();
@@ -22,9 +32,12 @@ export default function FreeTimeMatchingPage() {
   const [testMsg, setTestMsg]       = useState('');
   const [confirmResult, setConfirmResult] = useState(null);
   const [showUpload, setShowUpload]       = useState(false);
-  const [mySlots, setMySlots]             = useState(null); // 등록된 공강 시간
+  const [mySlots, setMySlots]             = useState(null);
+  const [rerollCount, setRerollCount]     = useState(0);
+  const [visiblePool, setVisiblePool]     = useState([]);  // 남성용 셔플 풀
 
-  const userId = userInfo?.userId;
+  const userId  = userInfo?.userId;
+  const isMale  = userInfo?.gender === 'MALE';
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
@@ -42,8 +55,14 @@ export default function FreeTimeMatchingPage() {
           freeTime.pending(userId),
           timetableApi.getSlots(userId).catch(() => null),
         ]);
-        setRequests(Array.isArray(list) ? list : []);
+        const arr = Array.isArray(list) ? list : [];
+        setRequests(arr);
         setMySlots(slotsData?.freeSlots ?? null);
+        // 남성: 최초 로드 시 셔플해서 풀 세팅
+        if (userInfo?.gender === 'MALE') {
+          setVisiblePool(shuffle(arr));
+          setRerollCount(0);
+        }
       }
     } catch {
       setRegistered(false);
@@ -100,6 +119,12 @@ export default function FreeTimeMatchingPage() {
     }
   }
 
+  function handleReroll() {
+    if (rerollCount >= MAX_REROLL) return;
+    setVisiblePool(shuffle(requests));
+    setRerollCount(c => c + 1);
+  }
+
   async function handleTestRun() {
     try {
       setTestMsg('실행 중...');
@@ -111,293 +136,236 @@ export default function FreeTimeMatchingPage() {
     }
   }
 
+  const DAY_KO = { MON:'월', TUE:'화', WED:'수', THU:'목', FRI:'금' };
+  const DAYS   = ['MON','TUE','WED','THU','FRI'];
+
+  const card = {
+    background: '#fff', borderRadius: 20, padding: '20px',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.08)', boxSizing: 'border-box',
+  };
+  const slotRow = {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '8px 0', borderBottom: '1px solid #f0f0f0',
+  };
+  const dayLabel = {
+    fontSize: 13, fontWeight: 700, color: PRIMARY,
+    width: 20, textAlign: 'center', flexShrink: 0,
+  };
+  const slotChip = {
+    fontSize: 12, fontWeight: 600, color: PRIMARY,
+    background: PRIMARY_BG, borderRadius: 20, padding: '3px 10px',
+  };
+  const btnPrimary = {
+    width: '100%', padding: '14px 0', borderRadius: 12,
+    background: PRIMARY, color: '#fff', border: 'none', cursor: 'pointer',
+    fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+  const btnOutline = {
+    width: '100%', padding: '14px 0', borderRadius: 12,
+    background: '#fff', color: PRIMARY, border: `1.5px solid ${PRIMARY}`,
+    cursor: 'pointer', fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+
   return (
-    <div className="app-shell">
-      <div className="page">
+    <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+
         {/* 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 0 12px' }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center' }}
-          >
-            <ChevronLeft size={24} />
+        <div style={{ display: 'flex', alignItems: 'center', padding: '20px 20px 8px', gap: 4 }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
+            <ChevronLeft size={24} color="#111" />
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Coffee size={22} color="#00B894" strokeWidth={2} />
-            <h2 style={{ fontSize: 22, fontWeight: 700 }}>공강 친구 매칭</h2>
-          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111', margin: 0 }}>공강 매칭</h2>
         </div>
 
-        {!userId && !loading && (
-          <div className="alert alert-error">로그인 정보를 불러올 수 없습니다. 다시 로그인해주세요.</div>
-        )}
+        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {loading && <div className="spinner" />}
+          {!userId && !loading && (
+            <p style={{ fontSize: 14, color: '#e00', textAlign: 'center', marginTop: 40 }}>로그인 정보를 불러올 수 없습니다.</p>
+          )}
 
-        {/* ── 업로드 결과 확인 단계 ── */}
-        {!loading && confirmResult && (
-          <>
-            <div className="card" style={{ textAlign: 'center', padding: '20px 20px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                <CheckCircle size={36} color="#00B894" strokeWidth={1.8} />
-              </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>분석이 완료됐어요!</h3>
-              <p style={{ fontSize: 13, color: 'var(--sub)' }}>아래 공강 시간이 맞는지 확인해주세요</p>
+          {loading && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 60 }}>
+              <Inbox size={32} color="#ddd" />
             </div>
+          )}
 
-            <div className="card">
-              {Object.keys(confirmResult).length === 0 ? (
-                <p style={{ color: 'var(--sub)', fontSize: 14, textAlign: 'center' }}>
-                  인식된 공강 시간이 없습니다
-                </p>
-              ) : (
-                ['MON','TUE','WED','THU','FRI'].map(day => {
-                  const slots = confirmResult[day];
-                  if (!slots?.length) return null;
-                  const dayKo = { MON:'월', TUE:'화', WED:'수', THU:'목', FRI:'금' }[day];
-                  return (
-                    <div key={day} style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 12,
-                      padding: '10px 0', borderBottom: '1px solid var(--border)',
-                    }}>
-                      <span style={{
-                        fontWeight: 700, fontSize: 14, color: 'var(--pink)',
-                        minWidth: 20, paddingTop: 2,
-                      }}>{dayKo}</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {slots.map((s, i) => (
-                          <span key={i} style={{
-                            fontSize: 14, background: 'var(--bg)',
-                            padding: '3px 10px', borderRadius: 8,
-                          }}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <button className="btn btn-primary" onClick={handleConfirm}>
-              맞아요, 저장할게요
-            </button>
-            <button className="btn btn-outline" onClick={handleReupload}>
-              다시 올릴게요
-            </button>
-          </>
-        )}
-
-        {/* ── 시간표 미등록 or 재업로드 ── */}
-        {!loading && !confirmResult && userId && (registered === false || showUpload) && (
-          <>
-            <div className="card" style={{ textAlign: 'center', padding: '32px 20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                <Calendar size={48} color="var(--sub)" strokeWidth={1.2} />
-              </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>
-                시간표를 먼저 등록해주세요
-              </h3>
-              <p style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.7, marginBottom: 20 }}>
-                에브리타임 시간표 캡처 이미지를 올리면<br />
-                공강 시간이 맞는 친구를 찾아드려요!
-              </p>
-
-              {uploadMsg && (
-                <div className="alert alert-error" style={{ textAlign: 'left', marginBottom: 14 }}>
-                  {uploadMsg}
+          {/* ── 업로드 결과 확인 ── */}
+          {!loading && confirmResult && (
+            <>
+              <div style={card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <CheckCircle size={22} color={PRIMARY} strokeWidth={1.8} />
+                  <p style={{ fontSize: 16, fontWeight: 800, color: '#111', margin: 0 }}>분석이 완료됐어요!</p>
                 </div>
-              )}
+                {Object.keys(confirmResult).length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center' }}>인식된 공강 시간이 없습니다</p>
+                ) : (
+                  DAYS.map(day => {
+                    const slots = confirmResult[day];
+                    if (!slots?.length) return null;
+                    return (
+                      <div key={day} style={slotRow}>
+                        <span style={dayLabel}>{DAY_KO[day]}</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {slots.map((s, i) => <span key={i} style={slotChip}>{s}</span>)}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <button style={btnPrimary} onClick={handleConfirm}>맞아요, 저장할게요</button>
+              <button style={btnOutline} onClick={handleReupload}>다시 올릴게요</button>
+            </>
+          )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleUpload}
-              />
-              <button
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-                onClick={() => fileInputRef.current.click()}
-                disabled={uploading}
-              >
-                <Camera size={18} color="#fff" />
-                {uploading ? '분석 중...' : '시간표 이미지 업로드'}
-              </button>
-              {showUpload && (
-                <button
-                  className="btn btn-outline"
-                  style={{ marginTop: 10 }}
-                  onClick={() => { setShowUpload(false); setUploadMsg(''); }}
-                >
-                  취소
+          {/* ── 시간표 미등록 ── */}
+          {!loading && !confirmResult && userId && (registered === false || showUpload) && (
+            <>
+              <div style={{ ...card, textAlign: 'center', padding: '40px 24px' }}>
+                <Calendar size={44} color="#ccc" strokeWidth={1.2} style={{ marginBottom: 16 }} />
+                <p style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 8 }}>시간표를 등록해주세요</p>
+                <p style={{ fontSize: 13, color: '#999', lineHeight: 1.7, marginBottom: 24 }}>
+                  에브리타임 시간표 캡처를 올리면<br />공강이 겹치는 상대를 찾아드려요
+                </p>
+                {uploadMsg && <p style={{ fontSize: 13, color: '#e00', marginBottom: 12 }}>{uploadMsg}</p>}
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
+                <button style={btnPrimary} onClick={() => fileInputRef.current.click()} disabled={uploading}>
+                  <Camera size={16} color="#fff" style={{ marginRight: 6 }} />
+                  {uploading ? '분석 중...' : '시간표 업로드'}
                 </button>
-              )}
-            </div>
+                {showUpload && (
+                  <button style={{ ...btnOutline, marginTop: 8 }} onClick={() => { setShowUpload(false); setUploadMsg(''); }}>취소</button>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center' }}>에브리타임 앱 → 시간표 화면 캡처 → 업로드</p>
+            </>
+          )}
 
-            <div className="alert alert-info" style={{ fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <Info size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>에브리타임 앱 → 시간표 화면 캡처 → 이미지 업로드</span>
-            </div>
-          </>
-        )}
-
-        {/* ── 시간표 등록됨 ── */}
-        {!loading && !confirmResult && userId && registered === true && !showUpload && (
-          <>
-            <div className="alert alert-info" style={{ fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <Coffee size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>매일 자정, 내일 공강이 겹치는 상대에게 매칭 요청이 옵니다.<br />수락하면 즉시 채팅이 가능해요!</span>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handleUpload}
-            />
-            <button
-              className="btn btn-outline"
-              style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-              onClick={handleReupload}
-            >
-              <RefreshCw size={16} color="var(--primary)" />
-              시간표 재업로드
-            </button>
-
-            {uploadMsg && (
-              <div className="alert alert-error">{uploadMsg}</div>
-            )}
-
-            {/* ── 내 공강 시간 요약 ── */}
-            {mySlots && Object.keys(mySlots).length > 0 && (
-              <div className="card" style={{ marginBottom: 4 }}>
-                <p style={{
-                  fontSize: 12, fontWeight: 700, color: 'var(--sub)',
-                  letterSpacing: '0.05em', marginBottom: 10,
-                }}>내 공강 시간</p>
-                {['MON','TUE','WED','THU','FRI'].map(day => {
-                  const slots = mySlots[day];
-                  if (!slots?.length) return null;
-                  const dayKo = { MON:'월', TUE:'화', WED:'수', THU:'목', FRI:'금' }[day];
-                  return (
-                    <div key={day} style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '6px 0',
-                      borderBottom: '1px solid var(--border)',
-                    }}>
-                      <span style={{
-                        width: 20, fontWeight: 700, fontSize: 13,
-                        color: '#00B894', textAlign: 'center',
-                      }}>{dayKo}</span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {slots.map((s, i) => (
-                          <span key={i} style={{
-                            fontSize: 12, background: '#D4F5EC',
-                            color: '#00876A', padding: '2px 9px',
-                            borderRadius: 20, fontWeight: 600,
-                          }}>{s}</span>
-                        ))}
+          {/* ── 시간표 등록됨 ── */}
+          {!loading && !confirmResult && userId && registered === true && !showUpload && (
+            <>
+              {/* 내 공강 시간 */}
+              {mySlots && Object.keys(mySlots).length > 0 && (
+                <div style={card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#111', margin: 0 }}>내 공강 시간</p>
+                    <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#aaa', fontFamily: 'inherit' }}
+                      onClick={handleReupload}
+                    >
+                      <RefreshCw size={12} color="#aaa" />재업로드
+                    </button>
+                  </div>
+                  {DAYS.map(day => {
+                    const slots = mySlots[day];
+                    if (!slots?.length) return null;
+                    return (
+                      <div key={day} style={slotRow}>
+                        <span style={dayLabel}>{DAY_KO[day]}</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {slots.map((s, i) => <span key={i} style={slotChip}>{s}</span>)}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-                <p style={{ fontSize: 11, color: 'var(--sub)', marginTop: 8 }}>
-                  이 시간대를 기준으로 매일 자정에 매칭이 이뤄져요
-                </p>
-              </div>
-            )}
-
-            {actionMsg && (
-              <div className="alert alert-success">{actionMsg}</div>
-            )}
-
-            <p className="section-title">받은 매칭 요청</p>
-
-            {requests.length === 0 && (
-              <div className="card" style={{ textAlign: 'center', color: 'var(--sub)', padding: '32px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                  <Inbox size={36} color="var(--sub)" strokeWidth={1.5} />
+                    );
+                  })}
                 </div>
-                <p>아직 들어온 요청이 없어요</p>
-                <p style={{ fontSize: 12, marginTop: 6 }}>매일 자정에 공강 매칭 요청이 생성됩니다</p>
-              </div>
-            )}
-
-            {requests.map(req => (
-              <div key={req.requestId} className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #D4F5EC, #00B894)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <User size={22} color="#fff" strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 700, fontSize: 15 }}>{req.partnerName}</p>
-                    <p style={{ fontSize: 12, color: 'var(--sub)', marginTop: 2 }}>
-                      {req.partnerGender === 'MALE' ? '남성' : '여성'}
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'var(--bg)', borderRadius: 10, padding: '10px 14px',
-                  fontSize: 13, marginBottom: 14,
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ color: 'var(--sub)' }}>날짜</span>
-                    <span style={{ fontWeight: 600 }}>{req.matchedDate}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--sub)' }}>공강 시간</span>
-                    <span style={{ fontWeight: 600, color: 'var(--green)' }}>
-                      {req.overlapStart?.substring(0, 5)} ~ {req.overlapEnd?.substring(0, 5)}
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="btn btn-primary"
-                    style={{ flex: 1, padding: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                    onClick={() => handleAccept(req.requestId)}
-                  >
-                    <CheckCircle size={16} color="#fff" />수락
-                  </button>
-                  <button
-                    className="btn btn-outline"
-                    style={{ flex: 1, padding: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                    onClick={() => handleReject(req.requestId)}
-                  >
-                    <XCircle size={16} color="var(--primary)" />거절
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* 개발자 도구 */}
-            <p className="section-title" style={{ marginTop: 28 }}>개발자 도구</p>
-            <div className="card">
-              <p style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 12 }}>
-                자정 스케줄러를 즉시 실행해 내일 날짜 기준으로 매칭 요청을 생성합니다.
-              </p>
-              {testMsg && (
-                <div className="alert alert-info" style={{ marginBottom: 10 }}>{testMsg}</div>
               )}
-              <button
-                className="btn btn-ghost"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-                onClick={handleTestRun}
-              >
-                <Wrench size={16} color="var(--sub)" />
-                스케줄러 즉시 실행 (테스트)
-              </button>
-            </div>
-          </>
-        )}
+
+              {uploadMsg && <p style={{ fontSize: 13, color: '#e00' }}>{uploadMsg}</p>}
+              {actionMsg && <p style={{ fontSize: 13, color: PRIMARY, fontWeight: 600 }}>{actionMsg}</p>}
+
+              {/* 섹션 헤더 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <p style={{ fontSize: 15, fontWeight: 800, color: '#111', margin: 0 }}>
+                  {isMale ? `추천 후보 ${Math.min(visiblePool.length, MALE_LIMIT)}명` : `받은 요청 ${requests.length}명`}
+                </p>
+                {isMale && requests.length > 0 && (
+                  <button
+                    onClick={handleReroll}
+                    disabled={rerollCount >= MAX_REROLL}
+                    style={{
+                      background: 'none', border: `1.5px solid ${rerollCount >= MAX_REROLL ? '#ddd' : PRIMARY}`,
+                      borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600,
+                      cursor: rerollCount >= MAX_REROLL ? 'not-allowed' : 'pointer',
+                      color: rerollCount >= MAX_REROLL ? '#ccc' : PRIMARY, fontFamily: 'inherit',
+                      display: 'flex', alignItems: 'center', gap: 5,
+                    }}
+                  >
+                    <Shuffle size={12} />다른 후보 ({MAX_REROLL - rerollCount}회)
+                  </button>
+                )}
+              </div>
+
+              {/* 빈 상태 */}
+              {(isMale ? visiblePool : requests).length === 0 && (
+                <div style={{ ...card, textAlign: 'center', padding: '40px 24px' }}>
+                  <Inbox size={32} color="#ddd" strokeWidth={1.5} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 14, color: '#aaa' }}>아직 들어온 요청이 없어요</p>
+                  <p style={{ fontSize: 12, color: '#ccc', marginTop: 4 }}>매일 자정에 공강 매칭 요청이 생성돼요</p>
+                </div>
+              )}
+
+              {/* 요청 카드 */}
+              {(isMale ? visiblePool.slice(0, MALE_LIMIT) : requests).map(req => (
+                <div key={req.requestId} style={card}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: '50%',
+                      background: PRIMARY_BG,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <User size={20} color={PRIMARY} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: 15, color: '#111', margin: 0 }}>{req.partnerName}</p>
+                      <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>
+                        {req.partnerGender === 'MALE' ? '남성' : '여성'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, color: '#aaa' }}>날짜</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{req.matchedDate}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 13, color: '#aaa' }}>공강 시간</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: PRIMARY }}>
+                        {req.overlapStart?.substring(0, 5)} ~ {req.overlapEnd?.substring(0, 5)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button style={{ ...btnPrimary, flex: 1 }} onClick={() => handleAccept(req.requestId)}>
+                      수락
+                    </button>
+                    <button style={{ ...btnOutline, flex: 1 }} onClick={() => handleReject(req.requestId)}>
+                      거절
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* 개발자 도구 */}
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+                <p style={{ fontSize: 11, color: '#ccc', marginBottom: 8 }}>개발자 도구</p>
+                {testMsg && <p style={{ fontSize: 12, color: '#aaa', marginBottom: 8 }}>{testMsg}</p>}
+                <button
+                  style={{ background: 'none', border: 'none', fontSize: 12, color: '#ccc', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}
+                  onClick={handleTestRun}
+                >
+                  <Wrench size={13} color="#ccc" />스케줄러 즉시 실행
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <BottomTabBar />
     </div>

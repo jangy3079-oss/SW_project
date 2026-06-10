@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { matching } from '../api/client';
-import BottomTabBar from '../components/BottomTabBar';
-import { Shuffle, Trophy, Coffee, Inbox, ChevronRight } from 'lucide-react';
+import { Trophy, Coffee, Inbox, ChevronRight } from 'lucide-react';
 
 const PRIMARY = '#003087';
 const PRIMARY_BG = '#EAF0FB';
@@ -38,22 +37,16 @@ export default function MatchPage() {
           <p style={s.sectionLabel}>새 매칭 시작</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <OptionCard
-              Icon={Shuffle}
-              title="일반 매칭"
-              desc="전체 학생과 랜덤 매칭 · 남녀 매칭 보장"
-              onClick={() => navigate('/match/waiting', { state: { type: 'GENERAL' } })}
+              Icon={Coffee}
+              title="공강 친구 매칭"
+              desc="공강 시간이 맞는 친구 찾기"
+              onClick={() => navigate('/match/freetime/pick')}
             />
             <OptionCard
               Icon={Trophy}
               title="랭크 매칭"
               desc="내 티어 근처 상대와 정밀 매칭"
               onClick={() => navigate('/match/waiting', { state: { type: 'RANK' } })}
-            />
-            <OptionCard
-              Icon={Coffee}
-              title="공강 친구 매칭"
-              desc="공강 시간이 맞는 친구 찾기"
-              onClick={() => navigate('/match/freetime')}
             />
           </div>
         </div>
@@ -104,7 +97,6 @@ export default function MatchPage() {
         </div>
 
       </div>
-      <BottomTabBar />
     </div>
   );
 }

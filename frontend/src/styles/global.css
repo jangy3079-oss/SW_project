@@ -277,3 +277,37 @@ body {
 }
 .page-transition  { animation: pageEnter 0.22s ease; }
 .tab-transition   { animation: tabEnter  0.18s ease; }
+
+@keyframes tabSlideRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes tabSlideLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+.tab-slide-right { animation: tabSlideRight 0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.tab-slide-left  { animation: tabSlideLeft  0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+/* ── 바텀시트 모달 애니메이션 ── */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.modal-overlay { animation: overlayFadeIn 0.25s ease; }
+.modal-sheet   { animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1); }
+
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes sheetSlideDown {
+  from { transform: translateY(0); }
+  to   { transform: translateY(105%); }
+}
+.modal-overlay-out { animation: overlayFadeOut 0.3s ease forwards; pointer-events: none; }
+.modal-sheet-out   { animation: sheetSlideDown 0.3s cubic-bezier(0.4, 0, 1, 1) forwards; }

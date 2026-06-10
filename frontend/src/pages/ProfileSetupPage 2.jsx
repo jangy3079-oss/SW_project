@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, photo as photoApi } from '../api/client';
 import { Camera, PenLine, Lightbulb, Leaf, GraduationCap, ClipboardList, Sparkles, X } from 'lucide-react';
-import AuthImage from '../components/AuthImage';
 
 // ── 상수 ──────────────────────────────────────────────────
 const PRIMARY    = '#003087';
@@ -51,29 +50,13 @@ const INTERESTS_DATA = {
   ],
 };
 
-const QUESTION_CATEGORIES = [
-  {
-    category: '나를 설명하는',
-    questions: [
-      '나의 장점을 꼽자면',
-      '요즘 가장 즐기고 있는 것',
-      '스트레스 받을 때 나는',
-      '나의 버킷리스트',
-      '나에게 쉬이란',
-      '인생의 목표가 있다면',
-    ],
-  },
-  {
-    category: '어떤 인연을 원하는',
-    questions: [
-      '이런 사람에게 호감을 느껴요',
-      '좋은 연인관계의 핵심은',
-      '이상형의 조건이 있다면',
-      '함께 하고 싶은 데이트는',
-      '선호하는 연락 스타일은',
-      '요즘 관심있는 것',
-    ],
-  },
+const EXTRA_QUESTIONS = [
+  '인생의 목표가 있다면',
+  '이런 사람에게 호감을 느껴요',
+  '좋은 연인관계의 핵심은',
+  '나에게 쉬이란',
+  '나의 버킷리스트',
+  '요즘 관심있는 것',
 ];
 
 const INFO_OPTIONS = {
@@ -121,12 +104,8 @@ const MBTI_PAIRS = [
 export default function ProfileSetupPage() {
   const navigate     = useNavigate();
   const { userInfo } = useAuth();
-  const fileRef          = useRef(null);
-  const chipContainerRef = useRef(null);
-  const skipMainAnim     = useRef(false); // 서브뷰 복귀 시 메인 진입 애니메이션 스킵
-  const uid              = userInfo?.userId;
-
-  const [chipContainerH, setChipContainerH] = useState(0);
+  const fileRef      = useRef(null);
+  const uid          = userInfo?.userId;
 
   const [step,        setStep]        = useState(1);
   const [view,        setView]        = useState('main');
@@ -137,78 +116,11 @@ export default function ProfileSetupPage() {
   const [photos,     setPhotos]     = useState([]);
   const [prefs,      setPrefs]      = useState({});
   const [bioAnswers, setBioAnswers] = useState([
-    { question: '나를 한마디로 설명하자면?', answer: '', required: true },
+    { question: '지금 하고 있는 일에 대해', answer: '', required: true },
   ]);
   const [interests,  setInterests]  = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [saving,     setSaving]     = useState(false);
-  const [qPickerOpen,       setQPickerOpen]       = useState(false);
-  const [qPickerVisible,    setQPickerVisible]    = useState(false);
-  const [closingAnswer,     setClosingAnswer]     = useState(false);
-  const [closingInterests,  setClosingInterests]  = useState(false);
-  const [closingMbti,       setClosingMbti]       = useState(false);
-  const [closingField,      setClosingField]      = useState(false);
-  const [closingStep,       setClosingStep]       = useState(false);
-  const [stepDir,           setStepDir]           = useState('forward'); // 'forward' | 'back'
-
-  // 애니메이션 CSS 주입
-  useEffect(() => {
-    const id = 'profile-setup-anim';
-    if (!document.getElementById(id)) {
-      const el = document.createElement('style');
-      el.id = id;
-      el.textContent = `
-        @keyframes answerSlideIn {
-          from { opacity: 0; transform: translateX(28px); }
-          to   { opacity: 1; transform: translateX(0);    }
-        }
-        @keyframes answerSlideOut {
-          from { opacity: 1; transform: translateX(0);    }
-          to   { opacity: 0; transform: translateX(28px); }
-        }
-        @keyframes chipFadeIn {
-          from { opacity: 0; transform: scale(0.65); }
-          to   { opacity: 1; transform: scale(1);    }
-        }
-        @keyframes stepEnter {
-          from { opacity: 0; transform: translateX(72px) scale(0.96); }
-          to   { opacity: 1; transform: translateX(0)    scale(1);    }
-        }
-        @keyframes stepExit {
-          from { opacity: 1; transform: translateX(0)     scale(1);    }
-          to   { opacity: 0; transform: translateX(-72px) scale(0.96); }
-        }
-        @keyframes stepEnterBack {
-          from { opacity: 0; transform: translateX(-72px) scale(0.96); }
-          to   { opacity: 1; transform: translateX(0)     scale(1);    }
-        }
-        @keyframes stepExitBack {
-          from { opacity: 1; transform: translateX(0)    scale(1);    }
-          to   { opacity: 0; transform: translateX(72px) scale(0.96); }
-        }
-      `;
-      document.head.appendChild(el);
-    }
-  }, []);
-
-  // 칩 컨테이너 높이 측정 → CSS height transition용
-  useEffect(() => {
-    const el = chipContainerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setChipContainerH(entry.contentRect.height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [view]); // view 전환 시 재연결
-
-  // 서브뷰 → 메인 복귀 후 한 프레임 뒤 flag 리셋
-  useEffect(() => {
-    if (view === 'main') {
-      const t = setTimeout(() => { skipMainAnim.current = false; }, 50);
-      return () => clearTimeout(t);
-    }
-  }, [view]);
 
   useEffect(() => {
     if (!uid) { setLoading(false); return; }
@@ -220,13 +132,9 @@ export default function ProfileSetupPage() {
       if (p) setProfile(p);
       if (ph) setPhotos(ph.sort((a, b) => a.photoOrder - b.photoOrder));
       if (pr) {
-        const raw    = pr.preferences || {};
-        const parsed = { ...raw };
-        try { if (raw.interests)   parsed.interests   = JSON.parse(raw.interests);   } catch {}
-        try { if (raw.bio_answers) parsed.bio_answers = JSON.parse(raw.bio_answers); } catch {}
-        setPrefs(parsed);
-        if (Array.isArray(parsed.interests))   setInterests(parsed.interests);
-        if (Array.isArray(parsed.bio_answers)) setBioAnswers(parsed.bio_answers);
+        setPrefs(pr);
+        if (pr.interests)   setInterests(pr.interests);
+        if (pr.bio_answers) setBioAnswers(pr.bio_answers);
       }
     }).finally(() => setLoading(false));
   }, [uid]);
@@ -241,16 +149,11 @@ export default function ProfileSetupPage() {
     if (!uid) return;
     setSaving(true);
     try {
-      const mainBio = bioAnswers.find(b => b.required)?.answer || '';
-      const simplePrefs = {};
-      ['mbti', 'smoking', 'drinking', 'relationship_goal', 'weekend'].forEach(k => {
-        if (prefs[k]) simplePrefs[k] = prefs[k];
-      });
-      simplePrefs.interests   = JSON.stringify(interests);
-      simplePrefs.bio_answers = JSON.stringify(bioAnswers);
+      const mainBio   = bioAnswers.find(b => b.required)?.answer || '';
+      const fullPrefs = { ...prefs, interests, bio_answers: bioAnswers };
       await Promise.all([
         userApi.updateBio(uid, mainBio),
-        userApi.updatePreferences(uid, { preferences: simplePrefs }),
+        userApi.updatePreferences(uid, fullPrefs),
       ]);
       navigate('/home', { replace: true });
     } catch (err) {
@@ -261,31 +164,8 @@ export default function ProfileSetupPage() {
   };
 
   const handleNext = async () => {
-    if (step < 4) {
-      setStepDir('forward');
-      setClosingStep(true);
-      setTimeout(() => {
-        setStep(s => s + 1);
-        setClosingStep(false);
-      }, 220);
-    } else {
-      await handleComplete();
-    }
-  };
-
-  const handleBack = () => {
-    setStepDir('back');
-    setClosingStep(true);
-    setTimeout(() => {
-      setStep(s => s - 1);
-      setClosingStep(false);
-    }, 220);
-  };
-
-  const closeField = () => {
-    setClosingField(true);
-    skipMainAnim.current = true;
-    setTimeout(() => { setView('main'); setClosingField(false); }, 250);
+    if (step < 4) setStep(s => s + 1);
+    else          await handleComplete();
   };
 
   const handleUpload = async (e) => {
@@ -305,41 +185,6 @@ export default function ProfileSetupPage() {
     } catch (err) { alert(err.message); }
   };
 
-  // ── 질문 피커 헬퍼 ──────────────────────────────────────
-  const openQPicker = () => {
-    setQPickerOpen(true);
-    requestAnimationFrame(() => requestAnimationFrame(() => setQPickerVisible(true)));
-  };
-
-  const closeQPicker = () => {
-    setQPickerVisible(false);
-    setTimeout(() => setQPickerOpen(false), 300);
-  };
-
-  const openAnswerView = (idx) => {
-    setActiveQIdx(idx);
-    setClosingAnswer(false);
-    setView('answer');
-  };
-
-  const closeAnswerView = () => {
-    setClosingAnswer(true);
-    skipMainAnim.current = true;
-    setTimeout(() => { setView('main'); setClosingAnswer(false); }, 250);
-  };
-
-  const closeInterests = () => {
-    setClosingInterests(true);
-    skipMainAnim.current = true;
-    setTimeout(() => { setView('main'); setClosingInterests(false); }, 250);
-  };
-
-  const closeMbti = () => {
-    setClosingMbti(true);
-    skipMainAnim.current = true;
-    setTimeout(() => { setView('main'); setClosingMbti(false); }, 250);
-  };
-
   const toggleMbti = (pairIdx, char) => {
     const cur = (prefs.mbti || '????').split('');
     cur[pairIdx] = char;
@@ -356,11 +201,11 @@ export default function ProfileSetupPage() {
   if (view === 'answer' && activeQIdx !== null) {
     const qa = bioAnswers[activeQIdx];
     return (
-      <div style={{ ...s.screen, animation: closingAnswer ? 'answerSlideOut 0.25s ease forwards' : 'answerSlideIn 0.25s ease' }}>
+      <div style={s.screen}>
         <SubHeader
-          left={<Btn onClick={closeAnswerView}><X size={18} color="#888" /></Btn>}
+          left={<Btn onClick={() => setView('main')}><X size={18} color="#888" /></Btn>}
           title="답변 작성"
-          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={closeAnswerView}>완료</Btn>}
+          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={() => setView('main')}>완료</Btn>}
         />
         <div style={{ padding: '12px 20px 12px', borderBottom: '1px solid #F0F0F0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -407,41 +252,29 @@ export default function ProfileSetupPage() {
   // ══ 서브 뷰: 관심사 선택 ══
   if (view === 'interests') {
     return (
-      <div style={{ ...s.screen, animation: closingInterests ? 'answerSlideOut 0.25s ease forwards' : 'answerSlideIn 0.25s ease' }}>
+      <div style={s.screen}>
         <SubHeader
-          left={<Btn onClick={closeInterests}>←</Btn>}
+          left={<Btn onClick={() => setView('main')}>←</Btn>}
           title="내 관심사"
-          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={closeInterests}>완료</Btn>}
+          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={() => setView('main')}>완료</Btn>}
         />
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #F0F0F0', background: '#fff' }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.35, color: '#111' }}>
             관심 있는 주제를<br />선택해 주세요
           </h2>
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: interests.length >= 10 ? '#e74c3c' : PRIMARY }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: interests.length >= 10 ? '#e74c3c' : PRIMARY, marginRight: 4 }}>
               {interests.length} / 10
             </span>
-          </div>
-          {/* 높이 부드럽게 확장 — ResizeObserver로 측정한 실제 높이로 transition */}
-          <div style={{
-            height: interests.length === 0 ? 0 : chipContainerH + 8,
-            overflow: 'hidden',
-            transition: 'height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}>
-            <div
-              ref={chipContainerRef}
-              style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 8 }}
-            >
-              {interests.map(label => (
-                <span key={label} style={{ ...s.selectedChip, animation: 'chipFadeIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                  {label}
-                  <button
-                    onClick={() => setInterests(prev => prev.filter(i => i !== label))}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#666', marginLeft: 2 }}
-                  >✕</button>
-                </span>
-              ))}
-            </div>
+            {interests.map(label => (
+              <span key={label} style={s.selectedChip}>
+                {label}
+                <button
+                  onClick={() => setInterests(prev => prev.filter(i => i !== label))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#666', marginLeft: 2 }}
+                >✕</button>
+              </span>
+            ))}
           </div>
         </div>
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 40px' }}>
@@ -460,11 +293,10 @@ export default function ProfileSetupPage() {
                       }}
                       style={{
                         ...s.interestBtn,
-                        border:      `2px solid ${sel ? PRIMARY : '#EFEFEF'}`,
-                        color:       sel ? PRIMARY : '#666',
-                        fontWeight:  sel ? 700 : 400,
-                        background:  sel ? '#F0F4FF' : '#FAFAFA',
-                        transition:  'background 0.18s, border-color 0.18s, color 0.18s',
+                        border:     `2px solid ${sel ? PRIMARY : '#EFEFEF'}`,
+                        color:      sel ? PRIMARY : '#666',
+                        fontWeight: sel ? 700 : 400,
+                        background: sel ? '#F0F4FF' : '#FAFAFA',
                       }}
                     >
                       <span style={{ fontSize: 26 }}>{item.emoji}</span>
@@ -484,31 +316,20 @@ export default function ProfileSetupPage() {
   if (view === 'mbti') {
     const mbti = (prefs.mbti || '????').split('');
     return (
-      <div style={{ ...s.screen, animation: closingMbti ? 'answerSlideOut 0.25s ease forwards' : 'answerSlideIn 0.25s ease' }}>
+      <div style={s.screen}>
         <SubHeader
-          left={<Btn onClick={closeMbti}>←</Btn>}
+          left={<Btn onClick={() => setView('main')}>←</Btn>}
           title="성격 유형"
-          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={closeMbti}>완료</Btn>}
+          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={() => setView('main')}>완료</Btn>}
         />
         <div style={{ padding: '28px 24px 8px' }}>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111' }}>나의 성격 유형</h2>
           <p style={{ fontSize: 14, color: '#888', marginTop: 6 }}>나는 어떤 사람인가요?</p>
-          {/* 항상 렌더링, grid-template-rows로 높이 부드럽게 확장 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateRows: mbti.includes('?') ? '0fr' : '1fr',
-            transition: 'grid-template-rows 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}>
-            <div style={{ overflow: 'hidden' }}>
-              <p style={{
-                marginTop: 10, fontSize: 22, fontWeight: 800, color: PRIMARY,
-                opacity: mbti.includes('?') ? 0 : 1,
-                transition: 'opacity 0.28s ease 0.08s',
-              }}>
-                {mbti.join('')}
-              </p>
-            </div>
-          </div>
+          {!mbti.includes('?') && (
+            <p style={{ marginTop: 10, fontSize: 22, fontWeight: 800, color: PRIMARY }}>
+              {mbti.join('')}
+            </p>
+          )}
         </div>
         <div style={{ padding: '20px 24px 40px' }}>
           {MBTI_PAIRS.map(([left, right, lLabel, rLabel], pi) => (
@@ -526,11 +347,10 @@ export default function ProfileSetupPage() {
                       background: sel ? '#EEF3FF' : '#F9F9F9',
                       cursor: 'pointer', display: 'flex', flexDirection: 'column',
                       alignItems: 'center', gap: 6,
-                      transition: 'background 0.2s, border-color 0.2s',
                     }}
                   >
-                    <span style={{ fontSize: 30, fontWeight: 900, color: sel ? PRIMARY : '#CCCCCC', transition: 'color 0.2s' }}>{char}</span>
-                    <span style={{ fontSize: 13, color: sel ? PRIMARY : '#999', transition: 'color 0.2s' }}>{label}</span>
+                    <span style={{ fontSize: 30, fontWeight: 900, color: sel ? PRIMARY : '#CCCCCC' }}>{char}</span>
+                    <span style={{ fontSize: 13, color: sel ? PRIMARY : '#999' }}>{label}</span>
                   </button>
                 );
               })}
@@ -546,11 +366,11 @@ export default function ProfileSetupPage() {
     const meta = INFO_OPTIONS[activeField];
     const cur  = prefs[activeField];
     return (
-      <div style={{ ...s.screen, animation: closingField ? 'answerSlideOut 0.25s ease forwards' : 'answerSlideIn 0.25s ease' }}>
+      <div style={s.screen}>
         <SubHeader
-          left={<Btn onClick={closeField}>←</Btn>}
+          left={<Btn onClick={() => setView('main')}>←</Btn>}
           title={meta.label}
-          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={closeField}>완료</Btn>}
+          right={<Btn style={{ color: PRIMARY, fontWeight: 700 }} onClick={() => setView('main')}>완료</Btn>}
         />
         <div style={{ padding: '28px 20px 0' }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111' }}>{meta.label}</h2>
@@ -559,7 +379,7 @@ export default function ProfileSetupPage() {
           {meta.options.map(opt => (
             <button
               key={opt.value}
-              onClick={() => { setPrefs(prev => ({ ...prev, [activeField]: opt.value })); closeField(); }}
+              onClick={() => { setPrefs(prev => ({ ...prev, [activeField]: opt.value })); setView('main'); }}
               style={{
                 ...s.optionRow,
                 color:      cur === opt.value ? PRIMARY : '#111',
@@ -598,40 +418,30 @@ export default function ProfileSetupPage() {
           ))}
         </div>
 
-        {/* step 바뀔 때 카드 스와이프 / 서브뷰 복귀 시 애니메이션 없음 */}
-        <div key={step} style={{ animation: skipMainAnim.current ? 'none'
-          : closingStep
-            ? (stepDir === 'back' ? 'stepExitBack 0.22s cubic-bezier(0.4,0,0.2,1) forwards' : 'stepExit 0.22s cubic-bezier(0.4,0,0.2,1) forwards')
-            : (stepDir === 'back' ? 'stepEnterBack 0.28s cubic-bezier(0.25,0.46,0.45,0.94)' : 'stepEnter 0.28s cubic-bezier(0.25,0.46,0.45,0.94)') }}>
-          <p style={{ fontSize: 13, color: PRIMARY, fontWeight: 700, marginBottom: 6 }}>
-            STEP {step} / {STEPS.length}
-          </p>
+        <p style={{ fontSize: 13, color: PRIMARY, fontWeight: 700, marginBottom: 6 }}>
+          STEP {step} / {STEPS.length}
+        </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 16,
-              background: PRIMARY_BG,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <StepIcon size={28} color={PRIMARY} strokeWidth={1.8} />
-            </div>
-            <div>
-              <h1 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: 0 }}>
-                {stepData.title}
-              </h1>
-              <p style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{stepData.desc}</p>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 16,
+            background: PRIMARY_BG,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <StepIcon size={28} color={PRIMARY} strokeWidth={1.8} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: 0 }}>
+              {stepData.title}
+            </h1>
+            <p style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{stepData.desc}</p>
           </div>
         </div>
       </div>
 
       {/* 단계별 콘텐츠 */}
-      <div style={{ flex: 1, overflowX: 'hidden', position: 'relative' }}>
-      <div key={step} style={{ height: '100%', overflowY: 'auto', paddingBottom: 20, animation: skipMainAnim.current ? 'none'
-          : closingStep
-            ? (stepDir === 'back' ? 'stepExitBack 0.22s cubic-bezier(0.4,0,0.2,1) forwards' : 'stepExit 0.22s cubic-bezier(0.4,0,0.2,1) forwards')
-            : (stepDir === 'back' ? 'stepEnterBack 0.28s cubic-bezier(0.25,0.46,0.45,0.94)' : 'stepEnter 0.28s cubic-bezier(0.25,0.46,0.45,0.94)') }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 20 }}>
 
         {/* STEP 1: 사진 등록 */}
         {step === 1 && (
@@ -642,7 +452,7 @@ export default function ProfileSetupPage() {
                   key={ph.photoId}
                   style={{ position: 'relative', aspectRatio: '1', borderRadius: 14, overflow: 'hidden', background: '#EEE' }}
                 >
-                  <AuthImage
+                  <img
                     src={`/uploads/${ph.fileName}`}
                     alt="프로필"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -688,7 +498,7 @@ export default function ProfileSetupPage() {
             {bioAnswers.map((qa, idx) => (
               <button
                 key={idx}
-                onClick={() => openAnswerView(idx)}
+                onClick={() => { setActiveQIdx(idx); setView('answer'); }}
                 style={s.bioCard}
               >
                 <div style={{ flex: 1, textAlign: 'left' }}>
@@ -716,7 +526,18 @@ export default function ProfileSetupPage() {
             ))}
 
             {bioAnswers.length < 4 && (
-              <button onClick={openQPicker} style={s.addQBtn}>
+              <button
+                onClick={() => {
+                  const used = bioAnswers.map(b => b.question);
+                  const next = EXTRA_QUESTIONS.find(q => !used.includes(q));
+                  if (!next) return;
+                  const newBio = [...bioAnswers, { question: next, answer: '', required: false }];
+                  setBioAnswers(newBio);
+                  setActiveQIdx(newBio.length - 1);
+                  setView('answer');
+                }}
+                style={s.addQBtn}
+              >
                 <span style={{ fontSize: 12, color: PRIMARY, background: PRIMARY_BG, padding: '3px 8px', borderRadius: 12, fontWeight: 700 }}>
                   + 질문 추가
                 </span>
@@ -838,7 +659,6 @@ export default function ProfileSetupPage() {
         )}
 
       </div>
-      </div> {/* 클리핑 래퍼 닫기 */}
 
       {/* 하단 네비게이션 */}
       <div style={{ padding: '14px 20px 36px', background: '#fff', borderTop: '1px solid #F0F0F0' }}>
@@ -857,7 +677,7 @@ export default function ProfileSetupPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           {step > 1 && (
             <button
-              onClick={handleBack}
+              onClick={() => setStep(s => s - 1)}
               style={{
                 width: 52, height: 52, borderRadius: 14,
                 border: `1.5px solid ${PRIMARY}`,
@@ -892,88 +712,6 @@ export default function ProfileSetupPage() {
           </button>
         </div>
       </div>
-
-      {/* ── 질문 선택 바텀시트 ── */}
-      {qPickerOpen && (
-        <>
-          {/* 딤 배경 */}
-          <div
-            onClick={closeQPicker}
-            style={{
-              position: 'fixed', inset: 0,
-              background: 'rgba(0,0,0,0.4)',
-              zIndex: 200,
-              opacity: qPickerVisible ? 1 : 0,
-              transition: 'opacity 0.3s ease',
-            }}
-          />
-          {/* 시트 */}
-          <div style={{
-            position: 'fixed', bottom: 0,
-            left: '50%',
-            transform: `translateX(-50%) translateY(${qPickerVisible ? '0%' : '100%'})`,
-            width: '100%', maxWidth: 430,
-            background: '#fff',
-            borderRadius: '20px 20px 0 0',
-            zIndex: 201,
-            maxHeight: '72vh',
-            overflowY: 'auto',
-            transition: 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
-          }}>
-            {/* 핸들 */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0' }} />
-            </div>
-            {/* 헤더 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 16px' }}>
-              <p style={{ fontSize: 18, fontWeight: 800, color: '#111', margin: 0 }}>질문 선택</p>
-              <button onClick={closeQPicker} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <X size={20} color="#888" />
-              </button>
-            </div>
-            {/* 카테고리별 질문 */}
-            {QUESTION_CATEGORIES.map(cat => {
-              const used = bioAnswers.map(b => b.question);
-              const available = cat.questions.filter(q => !used.includes(q));
-              if (available.length === 0) return null;
-              return (
-                <div key={cat.category} style={{ marginBottom: 16 }}>
-                  <p style={{
-                    fontSize: 11, fontWeight: 700, color: '#aaa',
-                    letterSpacing: 1, padding: '0 20px 8px',
-                    textTransform: 'uppercase',
-                  }}>
-                    {cat.category}
-                  </p>
-                  {available.map(q => (
-                    <button
-                      key={q}
-                      onClick={() => {
-                        closeQPicker();
-                        const newBio = [...bioAnswers, { question: q, answer: '', required: false }];
-                        setBioAnswers(newBio);
-                        const newIdx = newBio.length - 1;
-                        setTimeout(() => openAnswerView(newIdx), 320);
-                      }}
-                      style={{
-                        width: '100%', background: 'none', border: 'none',
-                        cursor: 'pointer', padding: '15px 20px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        borderBottom: '1px solid #F4F6FA', textAlign: 'left',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <span style={{ fontSize: 15, color: '#111', fontWeight: 500, fontFamily: 'inherit' }}>{q}</span>
-                      <span style={{ fontSize: 18, color: '#CCC' }}>›</span>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-            <div style={{ height: 40 }} />
-          </div>
-        </>
-      )}
 
     </div>
   );

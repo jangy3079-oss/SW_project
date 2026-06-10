@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
       email:    data.email,
       name:     data.name,
       gender:   data.gender ?? null,
-      rankTier: data.rankTier ?? 'BRONZE',
+      rankTier: data.rankTier ?? 'UNRANKED',
     };
 
     // 로그인 응답에 gender 없으면 프로필 API로 추가 조회

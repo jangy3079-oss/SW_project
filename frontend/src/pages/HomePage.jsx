@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { user as userApi, freeTime, matching, timetable, photo as photoApi } from '../api/client';
-import BottomTabBar from '../components/BottomTabBar';
-import { Bell, User, Calendar, Clock, Loader2, Trophy, Heart, ChevronRight } from 'lucide-react';
+import { useGems, GEM_COSTS } from '../contexts/GemsContext';
+import { User, Calendar, Clock, Loader2, Trophy, Heart, ChevronRight, Sparkles, CreditCard, Wallet, Landmark, Smartphone, CheckCircle, Circle } from 'lucide-react';
+import AuthImage from '../components/AuthImage';
 
 // ── 자정 카운트다운 훅 ─────────────────────────
 function useMidnightCountdown() {
@@ -30,9 +31,10 @@ const PRIMARY    = '#003087';
 const PRIMARY_BG = '#EAF0FB';
 
 // ── 티어 ───────────────────────────────────────
-const TIER_COLOR = { BRONZE:'#8a5a1a', SILVER:'#555', GOLD:'#8a6a00', PLATINUM:'#0a7a7a', DIAMOND:'#4a1aaa' };
-const TIER_BG    = { BRONZE:'#f5e0c3', SILVER:'#e8e8e8', GOLD:'#fff0c0', PLATINUM:'#d0f0f0', DIAMOND:'#e0d4ff' };
-const TIER_LABEL = { BRONZE:'BRONZE', SILVER:'SILVER', GOLD:'GOLD', PLATINUM:'PLATINUM', DIAMOND:'DIAMOND' };
+// MyPage의 TIER_META와 동일한 색상값으로 통일
+const TIER_COLOR = { UNRANKED:'#666666', BRONZE:'#CD7F32', SILVER:'#A8A9AD', GOLD:'#FFD700', PLATINUM:'#5AA9E6', DIAMOND:'#B9F2FF' };
+const TIER_BG    = { UNRANKED:'#e8e8e8', BRONZE:'#f5e0c3', SILVER:'#e8e8e8', GOLD:'#fff0c0', PLATINUM:'#d0f0f0', DIAMOND:'#e0d4ff' };
+const TIER_LABEL = { UNRANKED:'UNRANKED', BRONZE:'BRONZE', SILVER:'SILVER', GOLD:'GOLD', PLATINUM:'PLATINUM', DIAMOND:'DIAMOND' };
 
 function calcAge(birthDate) {
   if (!birthDate) return null;
@@ -54,17 +56,18 @@ function fmtTime(t) {
 export default function HomePage() {
   const navigate    = useNavigate();
   const { userInfo } = useAuth();
-  const [tab,           setTab]           = useState('gonggang');
+  const [tab,    setTab]    = useState('gonggang');
+  const [tabDir, setTabDir] = useState('none'); // 'right' | 'left' | 'none'
   const [pending,       setPending]       = useState([]);
   const [actives,       setActives]       = useState([]);
   const [ttReg,         setTtReg]         = useState(null);
   const [loading,       setLoading]       = useState(true);
-  const [photoMap,      setPhotoMap]      = useState({});       // freetime partnerId → URL
   const [chatPartnerMap, setChatPartnerMap] = useState({});     // active match partnerId → profile
 
   const userId    = userInfo?.userId;
   const tier      = userInfo?.rankTier || 'BRONZE';
   const countdown = useMidnightCountdown();
+  const { gems }  = useGems();
 
   // 첫 로그인: bio 없으면 프로필 설정으로
   useEffect(() => {
@@ -90,20 +93,6 @@ export default function HomePage() {
     setActives(aData);
     setTtReg(s.status === 'fulfilled' ? (s.value?.registered ?? false) : false);
     setLoading(false);
-
-    // ── 공강 대기 파트너 대표 사진 ──
-    for (const req of pData) {
-      if (!req.partnerId) continue;
-      try {
-        const photos = await photoApi.list(req.partnerId);
-        const primary = (photos || []).sort((a, b) => {
-          if (a.isPrimary) return -1; if (b.isPrimary) return 1;
-          return (a.photoOrder || 0) - (b.photoOrder || 0);
-        })[0];
-        if (primary?.fileName)
-          setPhotoMap(prev => ({ ...prev, [req.partnerId]: `/uploads/${primary.fileName}` }));
-      } catch {}
-    }
 
     // ── 활성 매칭(채팅 중) 파트너 프로필 + 사진 ──
     for (const match of aData) {
@@ -139,82 +128,85 @@ export default function HomePage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const goProfile = (req) =>
-    navigate(`/partner/${req.partnerId}`, {
-      state: {
-        requestId:    req.requestId,
-        matchType:    'FREETIME',
-        matchedDate:  req.matchedDate,
-        overlapStart: req.overlapStart,
-        overlapEnd:   req.overlapEnd,
-      },
-    });
+  const switchToRank     = useCallback(() => { setTabDir('right'); setTab('rank'); }, []);
+  const switchToGonggang = useCallback(() => { setTabDir('left');  setTab('gonggang'); }, []);
+
+  const [showShop, setShowShop] = useState(false);
 
   return (
     <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      {showShop && <GemShopModal gems={gems} onClose={() => setShowShop(false)} />}
       <div style={{ flex: 1, paddingBottom: 80, overflowY: 'auto' }}>
 
         {/* ── 헤더 ── */}
-        <header style={s.header}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <header style={{ ...s.header, flexDirection: 'column', gap: 0 }}>
+          {/* 타이틀(좌) + 재화·아이콘(우) — 한 행 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 4 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-              <button style={tab === 'gonggang' ? s.tabTitleOn : s.tabTitleOff} onClick={() => setTab('gonggang')}>
+              <button style={tab === 'gonggang' ? s.tabTitleOn : s.tabTitleOff} onClick={switchToGonggang}>
                 공강매칭
               </button>
-              <button style={tab === 'rank' ? s.tabTitleOn : s.tabTitleOff} onClick={() => setTab('rank')}>
+              <button style={tab === 'rank' ? s.tabTitleOn : s.tabTitleOff} onClick={switchToRank}>
                 랭크매칭
               </button>
             </div>
-            <span style={s.tabSubtitle}>
-              {tab === 'gonggang' ? '공강 시간이 겹치는 상대를 소개해드려요.' : '나와 티어가 비슷한 상대를 소개해드려요.'}
-            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button onClick={() => setShowShop(true)} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                background: PRIMARY_BG, borderRadius: 20,
+                padding: '5px 12px 5px 9px', border: 'none', cursor: 'pointer',
+              }}>
+                <Sparkles size={14} color={PRIMARY} strokeWidth={2.5} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: PRIMARY }}>{gems}</span>
+              </button>
+              <button style={s.avatarBtn} onClick={() => navigate('/mypage')}><User size={18} color={PRIMARY} /></button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button style={s.iconBtn}><Bell size={18} color="#555" /></button>
-            <button style={s.avatarBtn} onClick={() => navigate('/mypage')}><User size={18} color={PRIMARY} /></button>
-          </div>
+
+          {/* 소개글 */}
+          <span style={s.tabSubtitle}>
+            {tab === 'gonggang' ? '공강 시간이 겹치는 상대를 소개해드려요.' : '나와 티어가 비슷한 상대를 소개해드려요.'}
+          </span>
         </header>
 
         {/* ── 탭 콘텐츠 ── */}
-        {tab === 'gonggang' && (
-          <div key="gonggang" className="tab-transition">
-          <GonggangTab
-            loading={loading}
-            pending={pending}
-            ttReg={ttReg}
-            photoMap={photoMap}
-            actives={actives}
-            chatPartnerMap={chatPartnerMap}
-            tier={tier}
-            userId={userId}
-            onCardClick={goProfile}
-            onRegister={() => navigate('/match/freetime')}
-            onRankTab={() => setTab('rank')}
-            countdown={countdown}
-            navigate={navigate}
-          />
-          </div>
-        )}
+        <div style={{ overflow: 'hidden' }}>
+          {tab === 'gonggang' && (
+            <div key="gonggang" className={tabDir === 'left' ? 'tab-slide-left' : 'tab-transition'}>
+              <GonggangTab
+                loading={loading}
+                pending={pending}
+                ttReg={ttReg}
+                actives={actives}
+                chatPartnerMap={chatPartnerMap}
+                tier={tier}
+                userId={userId}
+                onRegister={() => navigate('/match/freetime')}
+                onRankTab={switchToRank}
+                countdown={countdown}
+                navigate={navigate}
+              />
+            </div>
+          )}
 
-        {tab === 'rank' && (
-          <div key="rank" className="tab-transition">
-          <RankTab
-            actives={actives}
-            loading={loading}
-            userId={userId}
-            tier={tier}
-            navigate={navigate}
-          />
-          </div>
-        )}
+          {tab === 'rank' && (
+            <div key="rank" className={tabDir === 'right' ? 'tab-slide-right' : 'tab-transition'}>
+              <RankCardSection
+                actives={actives}
+                userId={userId}
+                tier={tier}
+                navigate={navigate}
+              />
+            </div>
+          )}
+        </div>
       </div>
-      <BottomTabBar />
     </div>
   );
 }
 
 // ── 공강매칭 탭 ────────────────────────────────
-function GonggangTab({ loading, pending, ttReg, photoMap, actives, chatPartnerMap, onCardClick, onRegister, onRankTab, countdown, navigate }) {
+function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegister, onRankTab, countdown, navigate }) {
 
   // 시간표 미등록: 캐러셀 없이 안내 카드만
   if (!loading && ttReg === false) {
@@ -241,7 +233,8 @@ function GonggangTab({ loading, pending, ttReg, photoMap, actives, chatPartnerMa
   } else if (pending.length === 0) {
     slides.push({ type: 'empty' });
   } else {
-    pending.forEach(req => slides.push({ type: 'freetime', req }));
+    // 티저 카드 하나만 — 클릭 시 /match/freetime/pick 으로 이동
+    slides.push({ type: 'freetime-teaser', count: pending.length });
   }
 
   // 채팅 중인 파트너 카드
@@ -259,8 +252,6 @@ function GonggangTab({ loading, pending, ttReg, photoMap, actives, chatPartnerMa
       <SwipeCarousel
         slides={slides}
         countdown={countdown}
-        photoMap={photoMap}
-        onFreeTimeClick={onCardClick}
         onRankTab={onRankTab}
         navigate={navigate}
       />
@@ -272,7 +263,7 @@ function GonggangTab({ loading, pending, ttReg, photoMap, actives, chatPartnerMa
 const PEEK = 20;  // 양쪽 미리보기 px
 const GAP  = 14;  // 카드 간격 px
 
-function SwipeCarousel({ slides, countdown, photoMap, onFreeTimeClick, onRankTab, navigate }) {
+function SwipeCarousel({ slides, countdown, onRankTab, navigate }) {
   const wrapRef  = useRef(null);
   const [cardW,   setCardW]   = useState('');
   const [sidePad, setSidePad] = useState(PEEK + GAP); // 34px fallback
@@ -286,12 +277,12 @@ function SwipeCarousel({ slides, countdown, photoMap, onFreeTimeClick, onRankTab
   }, []);
 
   return (
-    <div ref={wrapRef} style={{ overflow: 'hidden' }}>
+    <div ref={wrapRef} style={{ overflow: 'hidden', padding: '12px 0', margin: '-12px 0' }}>
       <div
         style={{
           display: 'flex',
           gap: GAP,
-          padding: `0 ${sidePad}px 4px`,
+          padding: `12px ${sidePad}px`,
           overflowX: 'scroll',
           scrollSnapType: 'x mandatory',
           scrollbarWidth: 'none',
@@ -302,11 +293,10 @@ function SwipeCarousel({ slides, countdown, photoMap, onFreeTimeClick, onRankTab
           <div key={i} style={{ flexShrink: 0, width: cardW || `calc(100% - ${2*(PEEK+GAP)}px)`, scrollSnapAlign: 'center' }}>
             {slide.type === 'loading'  && <LoadingSlide />}
             {slide.type === 'empty'    && <EmptySlide countdown={countdown} />}
-            {slide.type === 'freetime' && (
-              <FreeTimeSlide
-                req={slide.req}
-                photoUrl={photoMap?.[slide.req.partnerId] || null}
-                onClick={() => onFreeTimeClick(slide.req)}
+            {slide.type === 'freetime-teaser' && (
+              <FreeTimeTeaserSlide
+                count={slide.count}
+                onClick={() => navigate('/match/freetime/pick')}
               />
             )}
             {slide.type === 'chat' && (
@@ -349,36 +339,55 @@ function EmptySlide({ countdown }) {
   );
 }
 
-// ── 슬라이드: 공강 파트너 (기존 스타일 유지) ────
-function FreeTimeSlide({ req, photoUrl, onClick }) {
+// ── 슬라이드: 공강 매칭 티저 ─────────────────────
+function FreeTimeTeaserSlide({ count, onClick }) {
   return (
-    <div style={{ ...s.cardSlide, cursor: 'pointer' }} onClick={onClick}>
-      {/* 사진 */}
-      <div style={s.cardPhotoWrap}>
-        {photoUrl ? (
-          <img src={photoUrl} alt={req.partnerName} style={s.cardPhoto}
-            onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
-        ) : null}
-        <div style={{ ...s.cardPhotoFallback, display: photoUrl ? 'none' : 'flex' }}>
-          <User size={72} color={PRIMARY} strokeWidth={1.2} />
-        </div>
-        {req.matchedDate && (
-          <div style={s.timeOverlay}>
-            <Calendar size={12} color="#fff" />
-            <span>{req.matchedDate} · {fmtTime(req.overlapStart)} ~ {fmtTime(req.overlapEnd)}</span>
-          </div>
-        )}
+    <div
+      style={{
+        ...s.slideBox,
+        background: '#fff',
+        cursor: 'pointer',
+        gap: 0,
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        padding: '28px 24px 24px',
+        boxSizing: 'border-box',
+        textAlign: 'left',
+      }}
+      onClick={onClick}
+    >
+      {/* 뱃지 */}
+      <span style={{
+        fontSize: 12, fontWeight: 700, color: PRIMARY,
+        background: PRIMARY_BG, borderRadius: 8,
+        padding: '4px 10px', letterSpacing: 0.3,
+      }}>
+        공강 매칭
+      </span>
+
+      {/* 타이틀 */}
+      <div>
+        <p style={{ fontSize: 22, fontWeight: 900, color: '#111', lineHeight: 1.4, margin: '20px 0 0' }}>
+          동아줄로 이어질<br />공강 상대가 도착했어요 ✨
+        </p>
+        <p style={{ fontSize: 14, color: PRIMARY, fontWeight: 600, margin: '10px 0 0' }}>
+          {count}명이 기다리고 있어요
+        </p>
       </div>
-      {/* 정보 */}
-      <div style={s.cardInfo}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={s.cardName}>{req.partnerName}</p>
-            <p style={s.cardSub}>공강 매칭 · 프로필 보기 →</p>
-          </div>
-          <ChevronRight size={18} color="#CCC" strokeWidth={2.5} />
-        </div>
-      </div>
+
+      {/* 풀너비 버튼 */}
+      <button
+        style={{
+          width: '100%', padding: '14px 0', borderRadius: 12, marginTop: 28,
+          background: PRIMARY, color: '#fff',
+          border: 'none', cursor: 'pointer',
+          fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}
+      >
+        인연 확인하기
+        <ChevronRight size={16} color="#fff" strokeWidth={2.5} />
+      </button>
     </div>
   );
 }
@@ -387,16 +396,18 @@ function FreeTimeSlide({ req, photoUrl, onClick }) {
 function ChatProfileSlide({ info, onClick }) {
   const age  = calcAge(info.birthDate);
   const tier = info.rankTier;
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = info.photo && !photoFailed;
 
   return (
     <div style={{ ...s.cardSlide, cursor: 'pointer' }} onClick={onClick}>
       {/* 사진 (카드 상단 60%) */}
       <div style={s.profilePhotoWrap}>
-        {info.photo ? (
-          <img src={info.photo} alt={info.name} style={s.cardPhoto}
-            onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+        {showPhoto ? (
+          <AuthImage src={info.photo} alt={info.name} style={s.cardPhoto}
+            onError={() => setPhotoFailed(true)} />
         ) : null}
-        <div style={{ ...s.cardPhotoFallback, display: info.photo ? 'none' : 'flex' }}>
+        <div style={{ ...s.cardPhotoFallback, display: showPhoto ? 'none' : 'flex' }}>
           <User size={72} color={PRIMARY} strokeWidth={1.2} />
         </div>
 
@@ -446,7 +457,7 @@ function ChatProfileSlide({ info, onClick }) {
 // ── 슬라이드: 끝 카드 ─────────────────────────
 function EndSlide({ onRankTab }) {
   return (
-    <div style={s.slideBox}>
+    <div style={{ ...s.slideBox, background: '#fff' }}>
       <Trophy size={40} color="#003087" strokeWidth={1.5} style={{ marginBottom: 8 }} />
       <p style={{ fontSize: 20, fontWeight: 800, color: '#111' }}>오늘의 카드 끝!</p>
       <p style={{ fontSize: 13, color: '#aaa', marginTop: 6, lineHeight: 1.6, textAlign: 'center' }}>
@@ -463,47 +474,32 @@ function EndSlide({ onRankTab }) {
   );
 }
 
-// ── 랭크매칭 탭 ────────────────────────────────
-function RankTab({ actives, loading, userId, tier, navigate }) {
-  const [queuing, setQueuing] = useState(false);
-  const [inQueue, setInQueue] = useState(false);
-
-  const handleEnterQueue = async () => {
-    setQueuing(true);
-    try { await matching.enterRank(userId); setInQueue(true); }
-    catch (e) { alert(e?.message || '대기열 등록에 실패했어요.'); }
-    finally { setQueuing(false); }
-  };
-
-  const handleCancelQueue = async () => {
-    setQueuing(true);
-    try { await matching.cancelRank(userId); setInQueue(false); }
-    catch (e) { alert(e?.message || '취소에 실패했어요.'); }
-    finally { setQueuing(false); }
-  };
-
+// ── 랭크매칭: 카드 섹션 ────────────────────────
+function RankCardSection({ actives, userId, tier, navigate }) {
   const rankActives = (actives || []).filter(m => m.matchType === 'RANK');
-
   return (
     <div>
-      <p style={s.subtitle}>rankScore 기반으로 나와 맞는 이성을 찾아요</p>
-
-      {/* 내 티어 카드 */}
-      <div style={{ padding: '0 20px 16px' }}>
-        <div style={{ ...s.tierCard, background: TIER_BG[tier] || '#f0f0f0' }}>
-          <div>
-            <p style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 4 }}>내 티어</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: TIER_COLOR[tier] || '#333' }}>
-              {TIER_LABEL[tier] || tier}
-            </p>
-          </div>
-          <Trophy size={40} color={TIER_COLOR[tier] || '#888'} strokeWidth={1.5} />
+      {/* 메인 티저 카드 — 캐러셀과 같은 좌우 패딩 */}
+      <div style={{ padding: '63px 34px 12px' }}>
+        <RankTeaserCard tier={tier} userId={userId} />
+        {/* 랭크 제도 안내 텍스트 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>
+          <button
+            onClick={() => navigate('/mypage/rank')}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, color: PRIMARY, fontWeight: 600, fontFamily: 'inherit',
+              padding: '4px 0', textDecoration: 'none',
+            }}
+          >
+            랭크 제도가 궁금하다면?
+          </button>
         </div>
       </div>
 
-      {/* 진행 중 랭크 매칭 */}
+      {/* 진행 중인 랭크 매칭 목록 */}
       {rankActives.length > 0 && (
-        <div style={{ padding: '0 20px 16px' }}>
+        <div style={{ padding: '4px 34px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 10 }}>
             <Heart size={15} color="#FF6B9D" fill="#FF6B9D" />
             진행 중인 랭크 매칭
@@ -521,27 +517,112 @@ function RankTab({ actives, loading, userId, tier, navigate }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* 대기 중 or CTA */}
-      <div style={{ padding: '0 20px' }}>
-        {inQueue ? (
-          <div style={s.queueCard}>
-            <div style={s.queueDot} />
-            <div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>매칭 대기 중이에요</p>
-              <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>rankScore가 비슷한 이성을 찾고 있어요</p>
-            </div>
-            <button style={{ ...s.cancelBtn, marginLeft: 'auto' }} disabled={queuing} onClick={handleCancelQueue}>취소</button>
-          </div>
-        ) : (
-          <button style={s.ctaBtnFull} disabled={queuing} onClick={handleEnterQueue}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Trophy size={16} color="#fff" />
-              {queuing ? '처리 중...' : '랭크 매칭 시작하기'}
-            </div>
-          </button>
-        )}
+// ── 랭크 티저 카드 ──────────────────────────────
+function RankTeaserCard({ tier, userId }) {
+  const [queuing, setQueuing] = useState(false);
+  const [inQueue, setInQueue] = useState(false);
+  const { gems, spendGems, canAfford } = useGems();
+
+  const handleStart = async () => {
+    if (!canAfford(GEM_COSTS.RANK_MATCH)) {
+      alert(`랭크 매칭에는 💎 ${GEM_COSTS.RANK_MATCH}개가 필요해요.\n현재 보유: ${gems}개`);
+      return;
+    }
+    setQueuing(true);
+    try {
+      spendGems(GEM_COSTS.RANK_MATCH);
+      await matching.enterRank(userId);
+      setInQueue(true);
+    } catch (e) {
+      spendGems(-GEM_COSTS.RANK_MATCH); // API 실패 시 환불
+      alert(e?.message || '대기열 등록에 실패했어요.');
+    } finally { setQueuing(false); }
+  };
+
+  const handleCancel = async () => {
+    setQueuing(true);
+    try { await matching.cancelRank(userId); setInQueue(false); }
+    catch (e) { alert(e?.message || '취소에 실패했어요.'); }
+    finally { setQueuing(false); }
+  };
+
+  return (
+    <div style={{
+      height: CARD_H,
+      background: '#fff',
+      borderRadius: 20,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+      padding: '28px 24px 24px',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+    }}>
+      {/* 뱃지 */}
+      <span style={{
+        fontSize: 12, fontWeight: 700, color: PRIMARY,
+        background: PRIMARY_BG, borderRadius: 8,
+        padding: '4px 10px', letterSpacing: 0.3,
+      }}>
+        랭크 매칭
+      </span>
+
+      {/* 중앙: 타이틀 + 티어 칩 + 설명 */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', gap: 16, padding: '20px 0' }}>
+        <p style={{ fontSize: 22, fontWeight: 900, color: '#111', lineHeight: 1.4, margin: 0 }}>
+          나와 비슷한 티어의<br />이성을 소개해드려요
+        </p>
+
+        {/* 티어 — 배경 없이 텍스트만 */}
+        <div>
+          <p style={{ fontSize: 34, fontWeight: 900, color: TIER_COLOR[tier] || '#CD7F32', letterSpacing: 1, margin: 0, lineHeight: 1 }}>
+            {TIER_LABEL[tier] || tier}
+          </p>
+          <p style={{ fontSize: 12, color: '#bbb', margin: '4px 0 0', fontWeight: 500 }}>내 티어</p>
+        </div>
+
       </div>
+
+      {/* 하단: 대기 중 상태 or CTA 버튼 */}
+      {inQueue ? (
+        <div style={{
+          width: '100%', background: '#F0FBF4', borderRadius: 14,
+          border: '1.5px solid #B5EAC8', padding: '14px 16px',
+          display: 'flex', alignItems: 'center', gap: 12, boxSizing: 'border-box',
+        }}>
+          <div style={{ width: 10, height: 10, borderRadius: 5, background: '#22C55E', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#111', margin: 0 }}>매칭 대기 중이에요</p>
+            <p style={{ fontSize: 12, color: '#888', margin: '2px 0 0' }}>비슷한 상대를 찾고 있어요</p>
+          </div>
+          <button style={s.cancelBtn} disabled={queuing} onClick={handleCancel}>취소</button>
+        </div>
+      ) : (
+        <button
+          style={{
+            width: '100%', padding: '14px 0', borderRadius: 12,
+            background: PRIMARY, color: '#fff',
+            border: 'none', cursor: queuing ? 'default' : 'pointer',
+            fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            opacity: queuing ? 0.7 : 1,
+          }}
+          disabled={queuing}
+          onClick={handleStart}
+        >
+          {queuing ? '처리 중...' : '랭크 매칭 시작하기'}
+          {!queuing && (
+            <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.25)', borderRadius: 10, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Sparkles size={12} color="#fff" strokeWidth={2.5} /> {GEM_COSTS.RANK_MATCH}
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -566,8 +647,8 @@ const s = {
     background: PRIMARY_BG, border: 'none', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  tabTitleOn:  { background: 'none', border: 'none', padding: 0, fontSize: 26, fontWeight: 900, color: '#111', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: -0.5 },
-  tabTitleOff: { background: 'none', border: 'none', padding: 0, fontSize: 26, fontWeight: 900, color: '#CCC', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: -0.5 },
+  tabTitleOn:  { background: 'none', border: 'none', padding: 0, fontSize: 26, fontWeight: 900, color: '#111', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: -0.5, transition: 'color 0.25s ease' },
+  tabTitleOff: { background: 'none', border: 'none', padding: 0, fontSize: 26, fontWeight: 900, color: '#CCC', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: -0.5, transition: 'color 0.25s ease' },
   tabSubtitle: { fontSize: 13, color: '#999', marginTop: 2 },
   subtitle:    { fontSize: 13, color: '#888', padding: '12px 20px 16px', lineHeight: 1.5 },
   sectionLabel: { fontSize: 18, fontWeight: 800, color: '#111', padding: '12px 34px 14px', margin: 0 },
@@ -581,6 +662,7 @@ const s = {
     padding: '32px 28px',
     textAlign: 'center',
     boxSizing: 'border-box',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
   },
 
   // 카드 (사진 + 정보)
@@ -590,6 +672,7 @@ const s = {
     overflow: 'hidden',
     background: '#fff',
     boxSizing: 'border-box',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
   },
 
   // 공강 매칭 사진 영역
@@ -638,7 +721,7 @@ const s = {
 
   // 프로필 카드 정보 영역
   profileInfo: {
-    height: INFO_H, background: '#F4F6FA',
+    height: INFO_H, background: '#fff',
     padding: '16px 18px', boxSizing: 'border-box',
   },
 
@@ -701,3 +784,318 @@ const s = {
     fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
   },
 };
+
+// ── 💎 젬 상점 모달 ────────────────────────────
+const GEM_PACKAGES = [
+  { id: 1, gems: 10,  price: '1,200원',  label: '소량 충전',  badge: null },
+  { id: 2, gems: 30,  price: '2,900원',  label: '인기',       badge: 'BEST' },
+  { id: 3, gems: 70,  price: '5,900원',  label: '알뜰 충전',  badge: null },
+  { id: 4, gems: 150, price: '9,900원',  label: '대용량',     badge: 'SALE' },
+];
+
+const PAYMENT_METHODS = [
+  { id: 'card',  Icon: CreditCard, label: '신용 · 체크카드', color: '#4A90E2' },
+  { id: 'kakao', Icon: Wallet,     label: '카카오페이',      color: '#FFCD00' },
+  { id: 'bank',  Icon: Landmark,   label: '계좌이체',        color: '#00B894' },
+  { id: 'phone', Icon: Smartphone, label: '휴대폰 결제',     color: '#6C5CE7' },
+];
+
+function GemShopModal({ gems, onClose }) {
+  const [selected, setSelected] = useState(null);
+  const [step, setStep] = useState('shop');          // 'shop' | 'payment' | 'done'
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [contentVisible, setContentVisible] = useState(true);
+  const sheetRef = useRef(null);
+
+  // 모든 스텝 전환에 공통으로 쓰는 함수
+  const goToStep = (nextStep, onSwitch) => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    // ① 현재 높이 고정 (스냅 방지)
+    const lockedH = sheet.offsetHeight;
+    sheet.style.transition = 'none';
+    sheet.style.height = `${lockedH}px`;
+    sheet.style.overflow = 'hidden';
+
+    setContentVisible(false);
+
+    setTimeout(() => {
+      onSwitch?.();
+      setStep(nextStep);
+
+      // ② 새 콘텐츠 DOM 반영 후: auto로 풀어서 실제 높이 측정 → lockedH에서 애니메이션
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          sheet.style.height = 'auto';                    // 실제 콘텐츠 높이로 해제
+          const naturalH = Math.min(sheet.offsetHeight, window.innerHeight * 0.88);
+          sheet.style.height = `${lockedH}px`;            // 시작점으로 복귀
+          void sheet.offsetHeight;                        // reflow 강제
+          sheet.style.transition = 'height 0.42s cubic-bezier(0.32, 0.72, 0, 1)';
+          sheet.style.height = `${naturalH}px`;           // 목표 높이로 전환
+        });
+      });
+    }, 180);
+
+    setTimeout(() => setContentVisible(true), 340);
+
+    // ③ done은 모달이 곧 닫히므로 cleanup 생략 (cleanup 시 auto 스냅 방지)
+    if (nextStep !== 'done') {
+      setTimeout(() => {
+        if (sheetRef.current) {
+          sheetRef.current.style.transition = '';
+          sheetRef.current.style.height = '';
+          sheetRef.current.style.overflow = '';
+        }
+      }, 760);
+    }
+  };
+
+  const handleBuy = () => {
+    if (!selected) return;
+    goToStep('payment', () => setSelectedPayment(null));
+  };
+
+  const handlePaymentConfirm = () => {
+    if (!selectedPayment) return;
+    goToStep('done');
+  };
+
+  const [closing, setClosing] = useState(false);
+  const pkg = GEM_PACKAGES.find(p => p.id === selected);
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(onClose, 320);
+  };
+
+  return (
+    <div
+      className={closing ? 'modal-overlay-out' : 'modal-overlay'}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+      onClick={handleClose}
+    >
+      <div
+        ref={sheetRef}
+        className={closing ? 'modal-sheet-out' : 'modal-sheet'}
+        style={{
+          width: '100%', maxWidth: 430,
+          background: '#fff', borderRadius: '24px 24px 0 0',
+          padding: '28px 24px 40px',
+          maxHeight: '88dvh', overflowY: 'auto',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+
+        {/* 핸들 */}
+        <div style={{ width: 40, height: 4, background: '#E0E0E0', borderRadius: 2, margin: '0 auto 20px' }} />
+
+        {/* 콘텐츠 래퍼 — 스텝 전환 시 페이드 아웃/인 */}
+        <div style={{
+          opacity: contentVisible ? 1 : 0,
+          transform: contentVisible ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.22s ease, transform 0.22s ease',
+        }}>
+
+          {/* ── SHOP ── */}
+          {step === 'shop' && (
+            <>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 20, fontWeight: 900, color: '#111', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles size={22} color={PRIMARY} strokeWidth={2} />
+                  젬 충전
+                </p>
+                <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>
+                  현재 보유 <strong style={{ color: PRIMARY }}>{gems}개</strong>
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                {GEM_PACKAGES.map(pkg => {
+                  const isSelected = selected === pkg.id;
+                  return (
+                    <button
+                      key={pkg.id}
+                      onClick={() => setSelected(pkg.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 18px', borderRadius: 14,
+                        border: `2px solid ${isSelected ? PRIMARY : '#EFEFEF'}`,
+                        background: isSelected ? PRIMARY_BG : '#FAFAFA',
+                        cursor: 'pointer', transition: 'border-color 0.2s ease, background 0.2s ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 12,
+                          background: isSelected ? PRIMARY : '#E8EEFA',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'background 0.2s ease',
+                        }}>
+                          <Sparkles size={18} color={isSelected ? '#fff' : PRIMARY} strokeWidth={2} />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                          <p style={{ fontSize: 16, fontWeight: 800, color: '#111', margin: 0 }}>{pkg.gems}개</p>
+                          <p style={{ fontSize: 12, color: '#888', margin: 0 }}>{pkg.label}</p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {pkg.badge && !isSelected && (
+                          <span style={{
+                            fontSize: 11, fontWeight: 800, color: '#fff',
+                            background: pkg.badge === 'BEST' ? '#FF6B9D' : PRIMARY,
+                            borderRadius: 6, padding: '2px 7px',
+                          }}>{pkg.badge}</span>
+                        )}
+                        {isSelected
+                          ? <CheckCircle size={22} color={PRIMARY} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                          : <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{pkg.price}</span>
+                        }
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleBuy}
+                disabled={!selected}
+                style={{
+                  width: '100%', padding: '15px', borderRadius: 14,
+                  background: selected ? PRIMARY : '#E0E0E0',
+                  color: '#fff', border: 'none',
+                  cursor: selected ? 'pointer' : 'not-allowed',
+                  fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
+                  transition: 'background 0.25s ease',
+                }}
+              >
+                {selected
+                  ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <Sparkles size={16} color="#fff" strokeWidth={2} />
+                      {GEM_PACKAGES.find(p => p.id === selected)?.gems}개 구매하기
+                    </span>
+                  : '패키지를 선택해주세요'
+                }
+              </button>
+            </>
+          )}
+
+          {/* ── PAYMENT ── */}
+          {step === 'payment' && (
+            <>
+              <p style={{ fontSize: 20, fontWeight: 900, color: '#111', margin: '0 0 20px' }}>결제 수단 선택</p>
+
+              {/* 결제 요약 */}
+              <div style={{
+                background: PRIMARY_BG, borderRadius: 14, padding: '14px 18px',
+                display: 'flex', justifyContent: 'space-between', marginBottom: 20,
+              }}>
+                <span style={{ fontSize: 14, color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Sparkles size={14} color={PRIMARY} strokeWidth={2} />
+                  {pkg?.gems}개
+                </span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: PRIMARY }}>{pkg?.price}</span>
+              </div>
+
+              {/* 결제 수단 목록 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                {PAYMENT_METHODS.map(m => {
+                  const isActive = selectedPayment === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelectedPayment(m.id)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '14px 18px', borderRadius: 12,
+                        border: `1.5px solid ${isActive ? PRIMARY : '#EFEFEF'}`,
+                        background: isActive ? PRIMARY_BG : '#FAFAFA',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 15, color: '#111',
+                        transition: 'border-color 0.2s ease, background 0.2s ease',
+                      }}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: isActive ? `${m.color}30` : `${m.color}18`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'background 0.2s ease',
+                      }}>
+                        <m.Icon size={18} color={m.color} strokeWidth={2} />
+                      </div>
+                      <span style={{ flex: 1, textAlign: 'left' }}>{m.label}</span>
+                      <div style={{
+                        opacity: isActive ? 1 : 0,
+                        transform: isActive ? 'scale(1)' : 'scale(0.6)',
+                        transition: 'opacity 0.2s ease, transform 0.2s ease',
+                      }}>
+                        <CheckCircle size={20} color={PRIMARY} strokeWidth={2.5} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 결제하기 버튼 */}
+              <button
+                onClick={handlePaymentConfirm}
+                disabled={!selectedPayment}
+                style={{
+                  width: '100%', padding: '15px', borderRadius: 14,
+                  background: selectedPayment ? PRIMARY : '#E0E0E0',
+                  color: selectedPayment ? '#fff' : '#bbb',
+                  border: 'none', cursor: selectedPayment ? 'pointer' : 'not-allowed',
+                  fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
+                  transition: 'background 0.25s ease, color 0.25s ease',
+                }}
+              >
+                {selectedPayment
+                  ? `${pkg?.price} 결제하기`
+                  : '결제 수단을 선택해주세요'
+                }
+              </button>
+            </>
+          )}
+
+          {/* ── DONE ── */}
+          {step === 'done' && (
+            <div style={{ textAlign: 'center', padding: '24px 0 10px' }}>
+              {/* 체크 아이콘 */}
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%',
+                background: '#EAF7F0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}>
+                <CheckCircle size={40} color="#00B894" strokeWidth={2} />
+              </div>
+
+              <p style={{ fontSize: 22, fontWeight: 900, color: '#111', margin: 0 }}>결제 완료!</p>
+
+              <p style={{ fontSize: 14, color: '#888', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <Sparkles size={14} color={PRIMARY} strokeWidth={2} />
+                {pkg?.gems}개가 충전되었어요
+              </p>
+
+              <button
+                onClick={handleClose}
+                style={{
+                  marginTop: 28, width: '100%', padding: '15px',
+                  borderRadius: 14, background: PRIMARY, color: '#fff',
+                  border: 'none', cursor: 'pointer',
+                  fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
+                }}
+              >확인</button>
+            </div>
+          )}
+
+        </div>{/* /콘텐츠 래퍼 */}
+      </div>
+    </div>
+  );
+}

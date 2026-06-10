@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS users (
 
     -- 랭크 관련
     rank_score    DECIMAL(3,2)    NOT NULL DEFAULT 0.00 COMMENT '평균 평가 점수 (0.00~5.00)',
-    rank_tier     ENUM('BRONZE','SILVER','GOLD','PLATINUM','DIAMOND')
-                                  NOT NULL DEFAULT 'BRONZE',
+    rank_tier     ENUM('UNRANKED','BRONZE','SILVER','GOLD','PLATINUM','DIAMOND')
+                                  NOT NULL DEFAULT 'UNRANKED',
     eval_count    INT             NOT NULL DEFAULT 0 COMMENT '총 평가 받은 횟수',
 
     -- 상태
@@ -171,11 +171,12 @@ BEGIN
        SET rank_score = avg_score,
            eval_count = cnt,
            rank_tier  = CASE
-                            WHEN avg_score >= 4.5 THEN 'DIAMOND'
-                            WHEN avg_score >= 4.0 THEN 'PLATINUM'
-                            WHEN avg_score >= 3.0 THEN 'GOLD'
-                            WHEN avg_score >= 2.0 THEN 'SILVER'
-                            ELSE                       'BRONZE'
+                            WHEN cnt < 3           THEN 'UNRANKED'
+                            WHEN avg_score >= 4.5  THEN 'DIAMOND'
+                            WHEN avg_score >= 4.0  THEN 'PLATINUM'
+                            WHEN avg_score >= 3.0  THEN 'GOLD'
+                            WHEN avg_score >= 2.0  THEN 'SILVER'
+                            ELSE                        'BRONZE'
                         END
      WHERE user_id = NEW.evaluated_id;
 END$$

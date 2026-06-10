@@ -166,7 +166,7 @@ public class ChatAndEvaluationService {
     public void submitEvaluation(Long userId, Long targetUserId, byte score) {
         // 1. 점수 검증
         if (score < 1 || score > 5) {
-            throw new CustomException(ErrorCode.INVALID_EVALUATION_SCORE);
+            throw new CustomException(ErrorCode.INVALID_SCORE);
         }
 
         // 2. 평가 중복 확인

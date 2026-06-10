@@ -3,6 +3,7 @@
 -- charset: utf8mb4 (이모지·한글 완전 지원)
 -- =====================================================
 
+
 CREATE DATABASE donga_dating
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_unicode_ci;
@@ -122,6 +123,7 @@ CREATE TABLE users (
                        department    VARCHAR(50)     NOT NULL COMMENT '학과',
                        grade         TINYINT         NOT NULL COMMENT '학년 1-4',
                        bio           TEXT            NULL     COMMENT '자기소개',
+                       preferences   TEXT            NULL     COMMENT '사용자 취향/태그 JSON', -- 🔥 JPA 스키마 검증 에러 해결 완료
 
                        rank_score    DECIMAL(3,2)    NOT NULL DEFAULT 0.00 COMMENT '평균 평가 점수 (0.00~5.00)',
                        rank_tier     ENUM('BRONZE','SILVER','GOLD','PLATINUM','DIAMOND') NOT NULL DEFAULT 'BRONZE',
@@ -277,7 +279,6 @@ CREATE TABLE chat_messages (
 
                                PRIMARY KEY (message_id),
                                CONSTRAINT fk_message_room FOREIGN KEY (room_id) REFERENCES chat_rooms(room_id) ON DELETE CASCADE,
-    -- 🛠️ KEY -> FOREIGN KEY 문법 오류 원천 정정 완료
                                CONSTRAINT fk_message_sender FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
                                INDEX idx_room_created (room_id, created_at),
                                INDEX idx_unread (room_id, is_read)
@@ -394,3 +395,47 @@ BEGIN
     END$$
 
     DELIMITER ;
+
+-- =====================================================
+-- 16. 공강시간 (에브리타임 시간표 분석 결과)
+-- =====================================================
+    CREATE TABLE IF NOT EXISTS free_time_slots (
+                                                   slot_id      BIGINT    NOT NULL AUTO_INCREMENT,
+                                                   user_id      BIGINT    NOT NULL,
+                                                   day_of_week  ENUM('MON','TUE','WED','THU','FRI') NOT NULL COMMENT '요일',
+        start_time   TIME      NOT NULL COMMENT '공강 시작 시각',
+        end_time     TIME      NOT NULL COMMENT '공강 종료 시각',
+        created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+        PRIMARY KEY (slot_id),
+        CONSTRAINT fk_slot_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        INDEX idx_slot_user (user_id),
+        INDEX idx_slot_day  (user_id, day_of_week)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+    -- =====================================================
+-- 17. 공강 매칭 요청 테이블
+-- =====================================================
+    CREATE TABLE IF NOT EXISTS free_time_requests (
+                                                      request_id     BIGINT    NOT NULL AUTO_INCREMENT,
+                                                      male_user_id   BIGINT    NOT NULL,
+                                                      female_user_id BIGINT    NOT NULL,
+                                                      matched_date   DATE      NOT NULL COMMENT '매칭 대상 날짜',
+                                                      overlap_start  TIME      NOT NULL COMMENT '겹치는 공강 시작',
+                                                      overlap_end    TIME      NOT NULL COMMENT '겹치는 공강 종료',
+                                                      status         ENUM('PENDING','ACCEPTED','REJECTED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+        match_id       BIGINT    NULL COMMENT '수락 시 생성된 매칭 ID (NULL=미생성)',
+        expires_at     TIMESTAMP NOT NULL COMMENT '수락 마감 시각 (당일 23:59:59)',
+        created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+        PRIMARY KEY (request_id),
+        CONSTRAINT fk_freq_male   FOREIGN KEY (male_user_id)   REFERENCES users(user_id) ON DELETE CASCADE,
+        CONSTRAINT fk_freq_female FOREIGN KEY (female_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        CONSTRAINT fk_freq_match  FOREIGN KEY (match_id)       REFERENCES matches(match_id) ON DELETE SET NULL,
+        UNIQUE KEY uq_freq_pair_date (male_user_id, female_user_id, matched_date),
+        INDEX idx_freq_male   (male_user_id,   status),
+        INDEX idx_freq_female (female_user_id, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

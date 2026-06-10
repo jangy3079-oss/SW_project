@@ -56,7 +56,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private RankTier rankTier = RankTier.BRONZE;
+    private RankTier rankTier = RankTier.UNRANKED;
 
     @Column(nullable = false)
     @Builder.Default
@@ -77,10 +77,37 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String preferences; // JSON 문자열로 저장 (사용자 취향/태그 칩)
+
     // ── 비즈니스 메서드 ──────────────────────────
+
+    public void updateProfile(String name,
+                              Gender gender,
+                              LocalDate birthDate,
+                              String studentId,
+                              String department,
+                              Byte grade,
+                              String bio) {
+        this.name = name;
+        this.gender = gender;
+        this.birthDate = birthDate;
+        this.studentId = studentId;
+        this.department = department;
+        this.grade = grade;
+        this.bio = bio;
+    }
 
     public void updateBio(String bio) {
         this.bio = bio;
+    }
+
+    public void updatePreferences(String preferencesJson) {
+        this.preferences = preferencesJson;
+    }
+
+    public String getPreferences() {
+        return this.preferences;
     }
 
     public void verifyEmail() {
@@ -119,6 +146,6 @@ public class User {
     }
 
     public enum RankTier {
-        BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
+        UNRANKED, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
     }
 }

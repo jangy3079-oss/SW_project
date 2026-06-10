@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Trophy, Shuffle, Calendar, MessageCircle, Star, Sparkles } from 'lucide-react';
 
 export default function MatchSuccessPage() {
   const navigate = useNavigate();
@@ -23,11 +24,16 @@ export default function MatchSuccessPage() {
     <div style={styles.wrap}>
       {/* 성공 배너 */}
       <div style={styles.banner}>
-        <div style={{ fontSize: 64, marginBottom: 12 }}>🎉</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <Sparkles size={64} color="#fff" strokeWidth={1.5} />
+        </div>
         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff' }}>매칭 성공!</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 6 }}>
-          {isRank ? '🏆 랭크 매칭' : '🎲 일반 매칭'}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
+          {isRank
+            ? <><Trophy size={16} color="rgba(255,255,255,0.85)" /><span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>랭크 매칭</span></>
+            : <><Shuffle size={16} color="rgba(255,255,255,0.85)" /><span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>일반 매칭</span></>
+          }
+        </div>
       </div>
 
       {/* 상대 정보 */}
@@ -54,26 +60,31 @@ export default function MatchSuccessPage() {
         </div>
 
         {/* 안내 */}
-        <div className="alert alert-info" style={{ marginBottom: 16 }}>
-          📅 매칭 기간 내에 서로를 평가해야 합니다. 만료 전에 평가를 완료해주세요.
+        <div className="alert alert-info" style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <Calendar size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>매칭 기간 내에 서로를 평가해야 합니다. 만료 전에 평가를 완료해주세요.</span>
         </div>
 
         {/* 액션 버튼 */}
         <button
           className="btn btn-primary"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           onClick={() => navigate(`/chat/${match.matchId}`, {
             state: { room: { matchId: match.matchId, opponentName: match.partnerName } },
           })}
         >
-          채팅하기 💬
+          <MessageCircle size={18} color="#fff" />
+          채팅하기
         </button>
         <button
           className="btn btn-outline"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           onClick={() => navigate(`/match/evaluate/${match.matchId}`, {
             state: { match },
           })}
         >
-          상대 평가하기 ⭐
+          <Star size={18} color="var(--primary)" />
+          상대 평가하기
         </button>
         <button
           className="btn btn-ghost"

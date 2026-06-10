@@ -1,0 +1,247 @@
+{
+  "categories": [
+    {
+      "id": "smoking",
+      "label": "흡연 여부",
+      "type": "single",
+      "options": [
+        {"value":"no_smoke","label":"비흡연 (담배 냄새 절대 싫어요 🙅‍♂️)","emoji":"🚭"},
+        {"value":"smoke","label":"흡연 (식후땡은 참을 수 없지 🚬)","emoji":"🚬"},
+        {"value":"vape","label":"전자담배 (냄새 덜함 💨)","emoji":"💨"},
+        {"value":"only_when_drinking","label":"술 마실 때만 (술자리 한정)","emoji":"🥂"}
+      ]
+    },
+    {
+      "id": "drinking",
+      "label": "음주 스타일",
+      "type": "single",
+      "options": [
+        {"value":"party","label":"알코올 요정 🍻"},
+        {"value":"moderate","label":"적당히 즐김 🍺"},
+        {"value":"sober","label":"알쓰/논알콜 🥤"},
+        {"value":"wine_highball","label":"와인/하이볼파 🍷"}
+      ]
+    },
+    {
+      "id": "fitness",
+      "label": "운동/자기계발",
+      "type": "single",
+      "options": [
+        {"value":"gym","label":"헬스 중독 🏋️‍♂️"},
+        {"value":"running","label":"러닝/산책파 🏃‍♂️"},
+        {"value":"spectator","label":"스포츠 관람파 ⚾"},
+        {"value":"home","label":"숨쉬기 운동(집콕) 🛌"}
+      ]
+    },
+    {
+      "id": "weekend",
+      "label": "주말 활동",
+      "type": "single",
+      "options": [
+        {"value":"outgoing","label":"프로 밖돌이/밖순이 🗺️"},
+        {"value":"local","label":"하단/로컬 지박령 🏘️"},
+        {"value":"selective","label":"선택적 외출파 🏠"},
+        {"value":"home_master","label":"집돌이/집순이 마스터 🎮"}
+      ]
+    },
+    {
+      "id": "pet",
+      "label": "반려동물 성향",
+      "type": "single",
+      "options": [
+        {"value":"dog","label":"댕댕이파 🐶"},
+        {"value":"cat","label":"냥이파 🐱"},
+        {"value":"all","label":"동물 다 좋아 🐾"},
+        {"value":"none","label":"반려동물 없음/랜선 집사 🖥️"}
+      ]
+    },
+    {
+      "id": "contact",
+      "label": "연락 스타일",
+      "type": "single",
+      "options": [
+        {"value":"fast_reply","label":"칼답 요정 ⚡"},
+        {"value":"focus_first","label":"할 일 우선 📚"},
+        {"value":"call_prefer","label":"카톡보단 전화 📞"}
+      ]
+    },
+    {
+      "id": "pay",
+      "label": "데이트 비용",
+      "type": "single",
+      "options": [
+        {"value":"split","label":"깔끔한 5:5 💳"},
+        {"value":"take_turns","label":"번갈아 내기 💸"},
+        {"value":"flex","label":"여유 있는 사람이 🤝"}
+      ]
+    },
+    {
+      "id": "culture",
+      "label": "문화/여가 취향",
+      "type": "multi",
+      "options": [
+        {"value":"music","label":"음악/악기 진심 🎸"},
+        {"value":"movie","label":"넷플/장르물 덕후 🎬"},
+        {"value":"gaming","label":"게임/PC방 데이트 🎮"},
+        {"value":"productive","label":"생산적 딴짓 💻"}
+      ]
+    },
+    {
+      "id": "commute",
+      "label": "통학/체력 스타일",
+      "type": "single",
+      "options": [
+        {"value":"strong","label":"강철 체력형 💪"},
+        {"value":"need_transport","label":"탑승 필수형 🚌"},
+        {"value":"flat_lover","label":"평지 예찬형 🚶‍♀️"},
+        {"value":"homebody","label":"집돌이/집순이형 🏠"}
+      ]
+    },
+    {
+      "id": "exam_spot",
+      "label": "시험기간 출몰 장소",
+      "type": "single",
+      "options": [
+        {"value":"library","label":"한림/부민도서관 밤샘 📚"},
+        {"value":"cafe","label":"카공 플레이스 ☕"},
+        {"value":"escape","label":"시험엔 욜로파 🍜"}
+      ]
+    },
+    {
+      "id": "contact_freq",
+      "label": "연락 빈도",
+      "type": "single",
+      "options": [
+        {"value":"real_time","label":"실시간 톡! 🗲"},
+        {"value":"batch","label":"몰아서 대화형 🕒"},
+        {"value":"call","label":"전화 선호형 📞"}
+      ]
+    },
+    {
+      "id": "date_freq",
+      "label": "데이트 주기",
+      "type": "single",
+      "options": [
+        {"value":"frequent","label":"주3~4회 이상"},
+        {"value":"weekly","label":"주1~2회"},
+        {"value":"sporadic","label":"격주/유동적"}
+      ]
+    },
+    {
+      "id": "conflict",
+      "label": "갈등 해결 방식",
+      "type": "single",
+      "options": [
+        {"value":"immediate","label":"그 자리에서 해결"},
+        {"value":"cooldown","label":"생각할 시간 필요"},
+        {"value":"avoid","label":"둥글게 유하게"}
+      ]
+    },
+    {
+      "id": "weekend_type",
+      "label": "주말 완벽한 방법",
+      "type": "single",
+      "options": [
+        {"value":"outdoor_fun","label":"핫플/여행"},
+        {"value":"home_netflix","label":"넷플/집콕"},
+        {"value":"productive","label":"운동/자기계발"}
+      ]
+    },
+    {
+      "id": "food",
+      "label": "좋아하는 음식",
+      "type": "single",
+      "options": [
+        {"value":"spicy","label":"매콤/자극"},
+        {"value":"clean","label":"깔끔/정갈"},
+        {"value":"soup","label":"뜨끈한 국물"}
+      ]
+    },
+    {
+      "id": "stress",
+      "label": "스트레스 치트키",
+      "type": "single",
+      "options": [
+        {"value":"eat","label":"맛있는 것 먹기"},
+        {"value":"hobby","label":"취미 몰두"},
+        {"value":"sleep","label":"푹 자기/유튜브"}
+      ]
+    },
+    {
+      "id": "festival",
+      "label": "축제 모습",
+      "type": "single",
+      "options": [
+        {"value":"front_row","label":"맨 앞 직관형"},
+        {"value":"foodie","label":"주막/푸드트럭 파"},
+        {"value":"avoid","label":"시끄러워서 피함"}
+      ]
+    },
+    {
+      "id": "cc_opinion",
+      "label": "CC(캠퍼스커플) 견해",
+      "type": "single",
+      "options": [
+        {"value":"love_it","label":"캠퍼스 낭만 찬성"},
+        {"value":"conditional","label":"조건부 찬성(비밀 연애)"},
+        {"value":"cautious","label":"조심스러움"}
+      ]
+    },
+    {
+      "id": "relationship_goal",
+      "label": "만남의 목적",
+      "type": "single",
+      "options": [
+        {"value":"serious","label":"진지하고 오래"},
+        {"value":"gradual","label":"썸→연인"},
+        {"value":"casual_friend","label":"동네/학교 친구 겸 연인"}
+      ]
+    },
+    {
+      "id": "personal_space",
+      "label": "개인시간 vs 구속",
+      "type": "single",
+      "options": [
+        {"value":"all_in","label":"올인형"},
+        {"value":"independent","label":"따로 또 같이"}
+      ]
+    },
+    {
+      "id": "reaction",
+      "label": "대화 리액션",
+      "type": "single",
+      "options": [
+        {"value":"empathy","label":"공감형"},
+        {"value":"advice","label":"해결책 제시형"}
+      ]
+    },
+    {
+      "id": "study_style",
+      "label": "시험/과제 스타일",
+      "type": "single",
+      "options": [
+        {"value":"cram","label":"벼락치기"},
+        {"value":"plan","label":"미리미리"},
+        {"value":"carry","label":"팀플 하드캐리"}
+      ]
+    },
+    {
+      "id": "study_balance",
+      "label": "학업·연애 밸런스",
+      "type": "single",
+      "options": [
+        {"value":"together","label":"시험기간에도 같이"},
+        {"value":"focus","label":"시험기간엔 각자 집중"}
+      ]
+    }
+  ],
+  "examplePreferences": {
+    "smoking":"no_smoke",
+    "drinking":"moderate",
+    "fitness":"gym",
+    "culture":["music","movie"],
+    "commute":"strong",
+    "contact":"fast_reply",
+    "relationship_goal":"gradual"
+  }
+}

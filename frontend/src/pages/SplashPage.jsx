@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Heart } from 'lucide-react';
 
 export default function SplashPage() {
   const navigate = useNavigate();
@@ -17,7 +18,9 @@ export default function SplashPage() {
   return (
     <div style={styles.wrap}>
       <div style={styles.logoWrap}>
-        <div style={styles.logo}>💕</div>
+        <div style={styles.logo}>
+          <Heart size={72} color="#fff" fill="#fff" />
+        </div>
         <h1 style={styles.title}>동아대 데이팅</h1>
         <p style={styles.sub}>동아대학교 학생 전용 매칭 서비스</p>
       </div>
@@ -47,7 +50,7 @@ const styles = {
     gap: 40,
   },
   logoWrap: { textAlign: 'center' },
-  logo: { fontSize: 72, marginBottom: 16 },
+  logo: { marginBottom: 16, display: 'flex', justifyContent: 'center' },
   title: { fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: -0.5 },
   sub: { fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 8 },
   dot: { display: 'flex', gap: 8 },

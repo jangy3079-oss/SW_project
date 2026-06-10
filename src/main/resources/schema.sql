@@ -12,7 +12,7 @@ USE donga_dating;
 -- ──────────────────────────────────────────
 -- 1. 사용자 (로그인/회원가입은 별도 담당자)
 -- ──────────────────────────────────────────
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id       BIGINT          NOT NULL AUTO_INCREMENT,
     email         VARCHAR(100)    NOT NULL COMMENT '동아대 이메일 (@donga.ac.kr)',
     password      VARCHAR(255)    NOT NULL COMMENT 'BCrypt 해시',
@@ -23,11 +23,12 @@ CREATE TABLE users (
     department    VARCHAR(50)     NOT NULL COMMENT '학과',
     grade         TINYINT         NOT NULL COMMENT '학년 1-4',
     bio           TEXT            NULL     COMMENT '자기소개',
+    preferences   TEXT            NULL     COMMENT '사용자 취향/태그 JSON',
 
     -- 랭크 관련
     rank_score    DECIMAL(3,2)    NOT NULL DEFAULT 0.00 COMMENT '평균 평가 점수 (0.00~5.00)',
-    rank_tier     ENUM('BRONZE','SILVER','GOLD','PLATINUM','DIAMOND')
-                                  NOT NULL DEFAULT 'BRONZE',
+    rank_tier     ENUM('UNRANKED','BRONZE','SILVER','GOLD','PLATINUM','DIAMOND')
+                                  NOT NULL DEFAULT 'UNRANKED',
     eval_count    INT             NOT NULL DEFAULT 0 COMMENT '총 평가 받은 횟수',
 
     -- 상태
@@ -47,7 +48,7 @@ CREATE TABLE users (
 -- ──────────────────────────────────────────
 -- 2. 이메일 인증 토큰 (VerificationToken 엔티티 기반)
 -- ──────────────────────────────────────────
-CREATE TABLE verification_tokens (
+CREATE TABLE IF NOT EXISTS verification_tokens (
     id BIGINT NOT NULL AUTO_INCREMENT,
     token VARCHAR(100) NOT NULL COMMENT 'UUID 인증 토큰',
     expiry_date TIMESTAMP NOT NULL,
@@ -61,7 +62,7 @@ CREATE TABLE verification_tokens (
 -- ──────────────────────────────────────────
 -- 3. 프로필 사진
 -- ──────────────────────────────────────────
-CREATE TABLE user_photos (
+CREATE TABLE IF NOT EXISTS user_photos (
     photo_id      BIGINT          NOT NULL AUTO_INCREMENT,
     user_id       BIGINT          NOT NULL,
     file_name     VARCHAR(255)    NOT NULL COMMENT '서버 저장 파일명 (UUID 기반)',
@@ -83,7 +84,7 @@ CREATE TABLE user_photos (
 --    · GENERAL : 일반 매칭
 --    · RANK    : 랭크 매칭 (rank_tier가 같거나 인접한 상대와 매칭)
 -- ──────────────────────────────────────────
-CREATE TABLE match_queue (
+CREATE TABLE IF NOT EXISTS match_queue (
     queue_id      BIGINT          NOT NULL AUTO_INCREMENT,
     user_id       BIGINT          NOT NULL,
     match_type    ENUM('GENERAL','RANK','LECTURE') NOT NULL,
@@ -107,7 +108,7 @@ CREATE TABLE match_queue (
 --    · male_user_id / female_user_id 로 성별 구분 보장
 --    · status: ACTIVE → 둘 다 평가 완료 시 EVALUATED, 기간 만료 시 EXPIRED
 -- ──────────────────────────────────────────
-CREATE TABLE matches (
+CREATE TABLE IF NOT EXISTS matches (
     match_id        BIGINT    NOT NULL AUTO_INCREMENT,
     male_user_id    BIGINT    NOT NULL,
     female_user_id  BIGINT    NOT NULL,
@@ -130,7 +131,7 @@ CREATE TABLE matches (
 --    · 매칭 1건당 evaluator → evaluated 방향으로 1건만 허용
 --    · score 1~5점, 평균이 users.rank_score 에 반영됨
 -- ──────────────────────────────────────────
-CREATE TABLE evaluations (
+CREATE TABLE IF NOT EXISTS evaluations (
     evaluation_id   BIGINT    NOT NULL AUTO_INCREMENT,
     match_id        BIGINT    NOT NULL,
     evaluator_id    BIGINT    NOT NULL COMMENT '평가자',
@@ -170,11 +171,12 @@ BEGIN
        SET rank_score = avg_score,
            eval_count = cnt,
            rank_tier  = CASE
-                            WHEN avg_score >= 4.5 THEN 'DIAMOND'
-                            WHEN avg_score >= 4.0 THEN 'PLATINUM'
-                            WHEN avg_score >= 3.0 THEN 'GOLD'
-                            WHEN avg_score >= 2.0 THEN 'SILVER'
-                            ELSE                       'BRONZE'
+                            WHEN cnt < 3           THEN 'UNRANKED'
+                            WHEN avg_score >= 4.5  THEN 'DIAMOND'
+                            WHEN avg_score >= 4.0  THEN 'PLATINUM'
+                            WHEN avg_score >= 3.0  THEN 'GOLD'
+                            WHEN avg_score >= 2.0  THEN 'SILVER'
+                            ELSE                        'BRONZE'
                         END
      WHERE user_id = NEW.evaluated_id;
 END$$
@@ -213,7 +215,7 @@ DELIMITER ;
 --    · 매칭된 사용자만 채팅 가능
 --    · 채팅방 상태 관리 (ACTIVE / CLOSED / BLOCKED)
 -- =====================================================
-    CREATE TABLE chat_rooms (
+    CREATE TABLE IF NOT EXISTS chat_rooms (
                                 room_id       BIGINT NOT NULL AUTO_INCREMENT,
                                 match_id      BIGINT NOT NULL,
 
@@ -241,7 +243,7 @@ DELIMITER ;
 --     · 읽음 여부 관리
 --     · 삭제 여부 관리 (내 화면에서만 삭제용)
 -- =====================================================
-    CREATE TABLE chat_messages (
+    CREATE TABLE IF NOT EXISTS chat_messages (
                                    message_id     BIGINT NOT NULL AUTO_INCREMENT,
 
                                    room_id        BIGINT NOT NULL,
@@ -277,7 +279,7 @@ DELIMITER ;
 --     · 욕설 / 스팸 / 부적절한 사진 등 신고 가능
 --     · 신고 기록 저장
 -- =====================================================
-    CREATE TABLE reports (
+    CREATE TABLE IF NOT EXISTS reports (
                              report_id       BIGINT NOT NULL AUTO_INCREMENT,
 
                              reporter_id     BIGINT NOT NULL COMMENT '신고한 사용자',
@@ -309,7 +311,7 @@ DELIMITER ;
 --     · 특정 사용자 차단 가능
 --     · 차단 시 채팅 및 상호작용 제한
 -- =====================================================
-    CREATE TABLE blocks (
+    CREATE TABLE IF NOT EXISTS blocks (
                             block_id        BIGINT NOT NULL AUTO_INCREMENT,
 
                             blocker_id      BIGINT NOT NULL COMMENT '차단한 사용자',
@@ -334,93 +336,70 @@ DELIMITER ;
 
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    -- =====================================================
--- 13. 사용자 좋아요 기능
---     ·
---     ·
--- =====================================================
-    CREATE TABLE likes (
-                           like_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                           sender_id BIGINT NOT NULL,
-                           receiver_id BIGINT NOT NULL,
-                           status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                           CONSTRAINT fk_like_sender FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                           CONSTRAINT fk_like_receiver FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                           CONSTRAINT uq_sender_receiver UNIQUE (sender_id, receiver_id),
-                           CONSTRAINT chk_status CHECK (status IN ('PENDING','ACCEPTED','REJECTED'))
-    );
-
-    CREATE INDEX idx_likes_sender ON likes(sender_id);
-    CREATE INDEX idx_likes_receiver ON likes(receiver_id);
-    CREATE INDEX idx_likes_status ON likes(status);
 
 -- =====================================================
--- 14. 매칭 노출 이력 (공강/일반 매칭에서 중복 노출 방지)
---     · 최소 7일간 동일 사용자에게 같은 후보 재노출 차단
+-- 13. 공강 매칭 요청
+--     · 자정 스케줄러가 다음날 공강 겹치는 남녀 쌍을 여기에 생성
+--     · 양쪽 수락 시 matches 테이블에 ACTIVE 매칭 생성
+--     · 거절/만료 시 REJECTED/EXPIRED 처리
 -- =====================================================
-CREATE TABLE match_exposure_history (
-    exposure_id      BIGINT          NOT NULL AUTO_INCREMENT,
-    source_user_id   BIGINT          NOT NULL COMMENT '매칭 요청 보낸 사용자 (A)',
-    target_user_id   BIGINT          NOT NULL COMMENT '후보 대상 사용자 (B)',
-    match_type       ENUM('GENERAL','RANK','LECTURE') NOT NULL,
-    exposure_reason  ENUM('REJECTED','REROLL_PASS','EXPIRED') NOT NULL COMMENT '노출 제외 사유',
-    exposed_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at       TIMESTAMP       NOT NULL COMMENT 'CURRENT_TIMESTAMP + 7일',
+CREATE TABLE IF NOT EXISTS free_time_requests (
+    request_id     BIGINT    NOT NULL AUTO_INCREMENT,
+    male_user_id   BIGINT    NOT NULL,
+    female_user_id BIGINT    NOT NULL,
+    matched_date   DATE      NOT NULL COMMENT '매칭 대상 날짜',
+    overlap_start  TIME      NOT NULL COMMENT '겹치는 공강 시작',
+    overlap_end    TIME      NOT NULL COMMENT '겹치는 공강 종료',
+    status         ENUM('PENDING','ACCEPTED','REJECTED','EXPIRED') NOT NULL DEFAULT 'PENDING',
+    match_id       BIGINT    NULL COMMENT '수락 시 생성된 매칭 ID (NULL=미생성)',
+    expires_at     TIMESTAMP NOT NULL COMMENT '수락 마감 시각 (당일 23:59:59)',
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (exposure_id),
-    CONSTRAINT fk_exposure_source FOREIGN KEY (source_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_exposure_target FOREIGN KEY (target_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    UNIQUE KEY uq_exposure_pair (source_user_id, target_user_id, match_type),
-    INDEX idx_exposure_expires (source_user_id, expires_at),
-    INDEX idx_exposure_target (target_user_id, expires_at)
+    PRIMARY KEY (request_id),
+    CONSTRAINT fk_freq_male   FOREIGN KEY (male_user_id)   REFERENCES users(user_id),
+    CONSTRAINT fk_freq_female FOREIGN KEY (female_user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_freq_match  FOREIGN KEY (match_id)       REFERENCES matches(match_id),
+    UNIQUE KEY uq_freq_pair_date (male_user_id, female_user_id, matched_date),
+    INDEX idx_freq_male   (male_user_id,   status),
+    INDEX idx_freq_female (female_user_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 15. 남성 사용자 리롤 횟수 관리
---     · 매일 자정에 초기화
---     · 한 번 사용할 때마다 -1
+-- 14. 공강시간 (에브리타임 시간표 분석 결과)
+--     · 사용자가 시간표 이미지를 업로드하면 FastAPI 분석 후 저장
+--     · 업로드마다 기존 데이터 전체 교체 (upsert 불필요)
 -- =====================================================
-CREATE TABLE reroll_counters (
-    counter_id       BIGINT          NOT NULL AUTO_INCREMENT,
-    user_id          BIGINT          NOT NULL COMMENT '남성 사용자만',
-    remaining_rerolls INT            NOT NULL DEFAULT 3,
-    reset_date       DATE            NOT NULL COMMENT '초기화 날짜 (자정 배치 실행 시)',
-    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS free_time_slots (
+    slot_id      BIGINT    NOT NULL AUTO_INCREMENT,
+    user_id      BIGINT    NOT NULL,
+    day_of_week  ENUM('MON','TUE','WED','THU','FRI') NOT NULL COMMENT '요일',
+    start_time   TIME      NOT NULL COMMENT '공강 시작 시각',
+    end_time     TIME      NOT NULL COMMENT '공강 종료 시각',
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (counter_id),
-    CONSTRAINT fk_reroll_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    UNIQUE KEY uq_reroll_user (user_id),
-    INDEX idx_reroll_reset (reset_date)
+    PRIMARY KEY (slot_id),
+    CONSTRAINT fk_slot_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_slot_user (user_id),
+    INDEX idx_slot_day  (user_id, day_of_week)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 16. 랭크 매칭 수락/거절 처리력 (Like 상태 확장)
---     · PENDING → ACCEPTED / REJECTED / EXPIRED / CANCELLED_BY_SENDER
+-- 15. 사용자 좋아요 기능
 -- =====================================================
-ALTER TABLE likes
-MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-DROP CHECK chk_status,
-ADD CONSTRAINT chk_status_new CHECK (status IN (
-    'PENDING',
-    'ACCEPTED',
-    'REJECTED',
-    'EXPIRED',
-    'CANCELLED_BY_SENDER',
-    'AUTO_REJECTED'
-));
+CREATE TABLE IF NOT EXISTS likes (
+    like_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sender_id   BIGINT NOT NULL,
+    receiver_id BIGINT NOT NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_like_sender   FOREIGN KEY (sender_id)   REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_like_receiver FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT uq_sender_receiver UNIQUE (sender_id, receiver_id),
+    CONSTRAINT chk_status CHECK (status IN ('PENDING','ACCEPTED','REJECTED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 좋아요 만료 시간 추적
-ALTER TABLE likes
-ADD COLUMN expires_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR) COMMENT '24시간 후 만료',
-ADD INDEX idx_likes_expires (status, expires_at);
-
--- =====================================================
--- 17. 채팅방 추가 필드 (TTL 관리)
--- =====================================================
-ALTER TABLE chat_rooms
-ADD COLUMN is_read_only BOOLEAN NOT NULL DEFAULT FALSE COMMENT '24시간 만료 후 읽기 전용',
-ADD COLUMN expires_at   TIMESTAMP NULL COMMENT 'Redis TTL 기반, 24시간 후 자동 종료',
-ADD COLUMN has_message  BOOLEAN NOT NULL DEFAULT FALSE COMMENT '대화 있음 여부 (유령 매칭 판단)',
-ADD INDEX idx_chat_expires (expires_at, status);
-
+CREATE INDEX IF NOT EXISTS idx_likes_sender   ON likes(sender_id);
+CREATE INDEX IF NOT EXISTS idx_likes_receiver ON likes(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_likes_status   ON likes(status);

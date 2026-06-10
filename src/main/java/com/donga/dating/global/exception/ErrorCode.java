@@ -11,6 +11,7 @@ public enum ErrorCode {
     // 공통
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    INVALID_JSON(HttpStatus.BAD_REQUEST, "잘못된 JSON 형식입니다."),
 
     // 사용자
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
@@ -22,6 +23,7 @@ public enum ErrorCode {
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증된 계정입니다."),
     PROFILE_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "프로필이 공개 상태가 아니어서 접근할 수 없습니다."),
     INVALID_MATCH_CONDITION(HttpStatus.BAD_REQUEST, "매칭 조건이 충족되지 않습니다."),
+
 
     // 사진
     PHOTO_NOT_FOUND(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."),
@@ -36,12 +38,18 @@ public enum ErrorCode {
     QUEUE_NOT_FOUND(HttpStatus.NOT_FOUND, "대기열을 찾을 수 없습니다."),
     MATCH_NOT_FOUND(HttpStatus.NOT_FOUND, "매칭을 찾을 수 없습니다."),
     MATCH_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 매칭입니다."),
+    MATCH_NOT_PENDING(HttpStatus.BAD_REQUEST, "수락/거절 대기 중인 매칭이 아닙니다."),
+    MATCH_NOT_PARTICIPANT(HttpStatus.FORBIDDEN, "해당 매칭의 참여자가 아닙니다."),
+    TIMETABLE_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "공강 시간표를 먼저 등록해야 합니다."),
 
     // 평가
     ALREADY_EVALUATED(HttpStatus.CONFLICT, "이미 평가를 완료했습니다."),
     INVALID_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
-    INVALID_EVALUATION_SCORE(HttpStatus.BAD_REQUEST, "평가 점수는 1~5점이어야 합니다."),
     EVALUATION_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 평가를 제출했습니다."),
+
+    // 시간표
+    TIMETABLE_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "시간표 분석에 실패했습니다."),
+    TIMETABLE_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "시간표 분석 서버에 연결할 수 없습니다."),
 
     // 하트/좋아요
     LIKE_NOT_FOUND(HttpStatus.NOT_FOUND, "좋아요(하트)를 찾을 수 없습니다."),
@@ -63,5 +71,3 @@ public enum ErrorCode {
     private final HttpStatus httpStatus;
     private final String message;
 }
-
-

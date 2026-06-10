@@ -1,11 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Heart, MessageCircle, User } from 'lucide-react';
 
 const TABS = [
-  { path: '/home',   label: '홈',   icon: '🏠' },
-  { path: '/match',  label: '매칭', icon: '💘' },
-  { path: '/chat',   label: '채팅', icon: '💬' },
-  { path: '/mypage', label: '마이', icon: '👤' },
+  { path: '/home',   label: '홈',   Icon: Home },
+  { path: '/match',  label: '매칭', Icon: Heart },
+  { path: '/chat',   label: '채팅', Icon: MessageCircle },
+  { path: '/mypage', label: '마이', Icon: User },
 ];
+
+const PRIMARY = '#003087';
 
 export default function BottomTabBar() {
   const navigate = useNavigate();
@@ -19,10 +22,14 @@ export default function BottomTabBar() {
           <button
             key={tab.path}
             onClick={() => navigate(tab.path)}
-            style={{ ...styles.tab, ...(active ? styles.tabActive : {}) }}
+            style={{
+              ...styles.tab,
+              color: active ? PRIMARY : '#AAAAAA',
+              transition: 'color 0.25s ease',
+            }}
           >
-            <span style={styles.icon}>{tab.icon}</span>
-            <span style={{ ...styles.label, color: active ? 'var(--pink)' : 'var(--sub)' }}>
+            <tab.Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+            <span style={styles.label}>
               {tab.label}
             </span>
           </button>
@@ -40,7 +47,7 @@ const styles = {
     transform: 'translateX(-50%)',
     width: '100%',
     maxWidth: 430,
-    height: 68,
+    height: 80,
     background: '#fff',
     borderTop: '1px solid var(--border)',
     display: 'flex',
@@ -55,13 +62,11 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '8px 0',
+    padding: '10px 0',
   },
-  tabActive: {},
-  icon: { fontSize: 22 },
   label: { fontSize: 11, fontWeight: 600, fontFamily: 'inherit' },
 };

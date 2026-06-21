@@ -75,12 +75,13 @@ export const photo = {
 
 // ── Matching ──────────────────────────────────
 export const matching = {
-  enterGeneral: (userId) => request('POST',   '/api/matching/general/enter', null, { userId }),
-  cancelGeneral:(userId) => request('DELETE', '/api/matching/general/cancel', null, { userId }),
-  enterRank:    (userId) => request('POST',   '/api/matching/rank/enter', null, { userId }),
-  cancelRank:   (userId) => request('DELETE', '/api/matching/rank/cancel', null, { userId }),
-  active:       (userId) => request('GET',    '/api/matching/active', null, { userId }),
-  history:      (userId) => request('GET',    '/api/matching/history', null, { userId }),
+  enterGeneral:    (userId) => request('POST',   '/api/matching/general/enter', null, { userId }),
+  cancelGeneral:   (userId) => request('DELETE', '/api/matching/general/cancel', null, { userId }),
+  enterRank:       (userId) => request('POST',   '/api/matching/rank/enter', null, { userId }),
+  cancelRank:      (userId) => request('DELETE', '/api/matching/rank/cancel', null, { userId }),
+  rankQueueStatus: (userId) => request('GET',    '/api/matching/rank/status', null, { userId }),
+  active:          (userId) => request('GET',    '/api/matching/active', null, { userId }),
+  history:         (userId) => request('GET',    '/api/matching/history', null, { userId }),
 };
 
 // ── Timetable ─────────────────────────────────
@@ -110,6 +111,15 @@ export const freeTime = {
   accept:  (requestId, userId)   => request('POST', `/api/matching/freetime/${requestId}/accept`, null, { userId }),
   reject:  (requestId, userId)   => request('POST', `/api/matching/freetime/${requestId}/reject`, null, { userId }),
   testRun: ()                    => request('POST', '/api/matching/freetime/test/run'),
+};
+
+// ── Likes ─────────────────────────────────────
+export const likes = {
+  received: (userId) => request('GET',  '/api/likes/received', null, { userId }),
+  sent:     (userId) => request('GET',  '/api/likes/sent',     null, { userId }),
+  accept:   (likeId) => request('POST', '/api/likes/accept',   null, { likeId }),
+  reject:   (likeId) => request('POST', '/api/likes/reject',   null, { likeId }),
+  send: (senderId, receiverId) => request('POST', '/api/likes/send', null, { senderId, receiverId }),
 };
 
 // ── Evaluation ────────────────────────────────

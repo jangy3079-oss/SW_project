@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { user as userApi, freeTime, matching, timetable, photo as photoApi } from '../api/client';
+import { user as userApi, freeTime, matching, timetable, photo as photoApi, likes } from '../api/client';
 import { useGems, GEM_COSTS } from '../contexts/GemsContext';
 import { User, Calendar, Clock, Loader2, Trophy, Heart, ChevronRight, Sparkles, CreditCard, Wallet, Landmark, Smartphone, CheckCircle, Circle } from 'lucide-react';
 import AuthImage from '../components/AuthImage';
@@ -55,14 +55,17 @@ function fmtTime(t) {
 // ── 메인 컴포넌트 ──────────────────────────────
 export default function HomePage() {
   const navigate    = useNavigate();
+  const location    = useLocation();
   const { userInfo } = useAuth();
-  const [tab,    setTab]    = useState('gonggang');
+  const [tab,    setTab]    = useState(location.state?.goTab || 'gonggang');
   const [tabDir, setTabDir] = useState('none'); // 'right' | 'left' | 'none'
   const [pending,       setPending]       = useState([]);
   const [actives,       setActives]       = useState([]);
   const [ttReg,         setTtReg]         = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [chatPartnerMap, setChatPartnerMap] = useState({});     // active match partnerId → profile
+  const [receivedLikes,  setReceivedLikes]  = useState([]);     // PENDING 받은 좋아요
+  const [likeProfileMap, setLikeProfileMap] = useState({});     // senderId → profile
 
   const userId    = userInfo?.userId;
   const tier      = userInfo?.rankTier || 'BRONZE';
@@ -81,18 +84,48 @@ export default function HomePage() {
     if (!userId) return;
     setLoading(true);
 
-    const [p, a, s] = await Promise.allSettled([
+    const [p, a, s, lr] = await Promise.allSettled([
       freeTime.pending(userId),
       matching.active(userId),
       timetable.status(userId),
+      likes.received(userId),
     ]);
 
-    const pData = p.status === 'fulfilled' ? (p.value || []) : [];
-    const aData = a.status === 'fulfilled' ? (a.value || []) : [];
+    const pData  = p.status  === 'fulfilled' ? (p.value  || []) : [];
+    const aData  = a.status  === 'fulfilled' ? (a.value  || []) : [];
+    const lrData = lr.status === 'fulfilled' ? (lr.value || []) : [];
     setPending(pData);
     setActives(aData);
     setTtReg(s.status === 'fulfilled' ? (s.value?.registered ?? false) : false);
     setLoading(false);
+
+    // ── PENDING 받은 좋아요 ──
+    const pendingLikes = lrData.filter(l => l.status === 'PENDING');
+    setReceivedLikes(pendingLikes);
+    for (const like of pendingLikes) {
+      const sid = like.senderId;
+      try {
+        const [photos, profile] = await Promise.all([
+          photoApi.list(sid).catch(() => []),
+          userApi.get(sid).catch(() => null),
+        ]);
+        const primary = (photos || []).sort((a, b) => {
+          if (a.isPrimary) return -1; if (b.isPrimary) return 1;
+          return (a.photoOrder || 0) - (b.photoOrder || 0);
+        })[0];
+        setLikeProfileMap(prev => ({
+          ...prev,
+          [sid]: {
+            name:       profile?.name,
+            photo:      primary?.fileName ? `/uploads/${primary.fileName}` : null,
+            birthDate:  profile?.birthDate,
+            department: profile?.department,
+            grade:      profile?.grade,
+            rankTier:   profile?.rankTier,
+          },
+        }));
+      } catch {}
+    }
 
     // ── 활성 매칭(채팅 중) 파트너 프로필 + 사진 ──
     for (const match of aData) {
@@ -130,6 +163,16 @@ export default function HomePage() {
 
   const switchToRank     = useCallback(() => { setTabDir('right'); setTab('rank'); }, []);
   const switchToGonggang = useCallback(() => { setTabDir('left');  setTab('gonggang'); }, []);
+
+  const onLikeAccept = useCallback(async (likeId) => {
+    await likes.accept(likeId);
+    setReceivedLikes(prev => prev.filter(l => l.likeId !== likeId));
+  }, []);
+
+  const onLikeReject = useCallback(async (likeId) => {
+    await likes.reject(likeId);
+    setReceivedLikes(prev => prev.filter(l => l.likeId !== likeId));
+  }, []);
 
   const [showShop, setShowShop] = useState(false);
 
@@ -185,6 +228,10 @@ export default function HomePage() {
                 onRankTab={switchToRank}
                 countdown={countdown}
                 navigate={navigate}
+                receivedLikes={receivedLikes}
+                likeProfileMap={likeProfileMap}
+                onLikeAccept={onLikeAccept}
+                onLikeReject={onLikeReject}
               />
             </div>
           )}
@@ -196,6 +243,11 @@ export default function HomePage() {
                 userId={userId}
                 tier={tier}
                 navigate={navigate}
+                chatPartnerMap={chatPartnerMap}
+                receivedLikes={receivedLikes}
+                likeProfileMap={likeProfileMap}
+                onLikeAccept={onLikeAccept}
+                onLikeReject={onLikeReject}
               />
             </div>
           )}
@@ -206,7 +258,9 @@ export default function HomePage() {
 }
 
 // ── 공강매칭 탭 ────────────────────────────────
-function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegister, onRankTab, countdown, navigate }) {
+function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegister, onRankTab, countdown, navigate,
+                       receivedLikes, likeProfileMap, onLikeAccept, onLikeReject }) {
+  const [showLikeDetails, setShowLikeDetails] = useState(false);
 
   // 시간표 미등록: 캐러셀 없이 안내 카드만
   if (!loading && ttReg === false) {
@@ -221,6 +275,20 @@ function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegis
           </p>
           <button style={s.ctaBtn} onClick={onRegister}>시간표 등록하기 →</button>
         </div>
+        {(receivedLikes || []).length > 0 && (
+          <ReceivedLikesTeaserCard
+            count={receivedLikes.length}
+            onClick={() => setShowLikeDetails(v => !v)}
+          />
+        )}
+        {showLikeDetails && (receivedLikes || []).length > 0 && (
+          <ReceivedLikesSection
+            likes={receivedLikes}
+            profileMap={likeProfileMap}
+            onAccept={onLikeAccept}
+            onReject={onLikeReject}
+          />
+        )}
       </div>
     );
   }
@@ -235,6 +303,11 @@ function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegis
   } else {
     // 티저 카드 하나만 — 클릭 시 /match/freetime/pick 으로 이동
     slides.push({ type: 'freetime-teaser', count: pending.length });
+  }
+
+  // 받은 좋아요 티저 슬라이드
+  if (!loading && (receivedLikes || []).length > 0) {
+    slides.push({ type: 'received-likes-teaser', count: receivedLikes.length });
   }
 
   // 채팅 중인 파트너 카드
@@ -254,7 +327,16 @@ function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegis
         countdown={countdown}
         onRankTab={onRankTab}
         navigate={navigate}
+        onReceivedLikesTap={() => setShowLikeDetails(v => !v)}
       />
+      {showLikeDetails && (receivedLikes || []).length > 0 && (
+        <ReceivedLikesSection
+          likes={receivedLikes}
+          profileMap={likeProfileMap}
+          onAccept={onLikeAccept}
+          onReject={onLikeReject}
+        />
+      )}
     </div>
   );
 }
@@ -263,7 +345,7 @@ function GonggangTab({ loading, pending, ttReg, actives, chatPartnerMap, onRegis
 const PEEK = 20;  // 양쪽 미리보기 px
 const GAP  = 14;  // 카드 간격 px
 
-function SwipeCarousel({ slides, countdown, onRankTab, navigate }) {
+function SwipeCarousel({ slides, countdown, onRankTab, navigate, onReceivedLikesTap }) {
   const wrapRef  = useRef(null);
   const [cardW,   setCardW]   = useState('');
   const [sidePad, setSidePad] = useState(PEEK + GAP); // 34px fallback
@@ -304,6 +386,9 @@ function SwipeCarousel({ slides, countdown, onRankTab, navigate }) {
                 info={slide.info}
                 onClick={() => navigate(`/partner/${slide.partnerId}`, { state: { matchId: slide.matchId } })}
               />
+            )}
+            {slide.type === 'received-likes-teaser' && (
+              <ReceivedLikesTeaserSlide count={slide.count} onClick={onReceivedLikesTap} />
             )}
             {slide.type === 'end' && <EndSlide onRankTab={onRankTab} />}
           </div>
@@ -475,7 +560,8 @@ function EndSlide({ onRankTab }) {
 }
 
 // ── 랭크매칭: 카드 섹션 ────────────────────────
-function RankCardSection({ actives, userId, tier, navigate }) {
+function RankCardSection({ actives, userId, tier, navigate, chatPartnerMap, receivedLikes, likeProfileMap, onLikeAccept, onLikeReject }) {
+  const [showLikeDetails, setShowLikeDetails] = useState(false);
   const rankActives = (actives || []).filter(m => m.matchType === 'RANK');
   return (
     <div>
@@ -495,6 +581,24 @@ function RankCardSection({ actives, userId, tier, navigate }) {
             랭크 제도가 궁금하다면?
           </button>
         </div>
+
+        {/* 받은 좋아요 티저 카드 */}
+        {(receivedLikes || []).length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <ReceivedLikesTeaserCard
+              count={receivedLikes.length}
+              onClick={() => setShowLikeDetails(v => !v)}
+            />
+          </div>
+        )}
+        {showLikeDetails && (receivedLikes || []).length > 0 && (
+          <ReceivedLikesSection
+            likes={receivedLikes}
+            profileMap={likeProfileMap}
+            onAccept={onLikeAccept}
+            onReject={onLikeReject}
+          />
+        )}
       </div>
 
       {/* 진행 중인 랭크 매칭 목록 */}
@@ -523,9 +627,35 @@ function RankCardSection({ actives, userId, tier, navigate }) {
 
 // ── 랭크 티저 카드 ──────────────────────────────
 function RankTeaserCard({ tier, userId }) {
+  const navigate = useNavigate();
   const [queuing, setQueuing] = useState(false);
   const [inQueue, setInQueue] = useState(false);
   const { gems, spendGems, canAfford } = useGems();
+  const pollRef = useRef(null);
+
+  // 마운트 시 대기열 상태 복원 (다른 화면 갔다 와도 유지)
+  useEffect(() => {
+    if (!userId) return;
+    matching.rankQueueStatus(userId)
+      .then(inQ => setInQueue(!!inQ))
+      .catch(() => {});
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 대기 중일 때 3초마다 매칭 완료 여부 체크
+  useEffect(() => {
+    if (!inQueue || !userId) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const active = await matching.active(userId);
+        const rankMatch = (active || []).find(m => m.matchType === 'RANK');
+        if (rankMatch) {
+          clearInterval(pollRef.current);
+          navigate('/match/success', { state: { match: rankMatch } });
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(pollRef.current);
+  }, [inQueue, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStart = async () => {
     if (!canAfford(GEM_COSTS.RANK_MATCH)) {
@@ -535,8 +665,12 @@ function RankTeaserCard({ tier, userId }) {
     setQueuing(true);
     try {
       spendGems(GEM_COSTS.RANK_MATCH);
-      await matching.enterRank(userId);
-      setInQueue(true);
+      const res = await matching.enterRank(userId);
+      if (res?.matched) {
+        navigate('/match/success', { state: { match: res.match } });
+      } else {
+        setInQueue(true);
+      }
     } catch (e) {
       spendGems(-GEM_COSTS.RANK_MATCH); // API 실패 시 환불
       alert(e?.message || '대기열 등록에 실패했어요.');
@@ -1095,6 +1229,154 @@ function GemShopModal({ gems, onClose }) {
           )}
 
         </div>{/* /콘텐츠 래퍼 */}
+      </div>
+    </div>
+  );
+}
+
+// ── 슬라이드: 받은 좋아요 티저 (캐러셀용) ────────────
+function ReceivedLikesTeaserSlide({ count, onClick }) {
+  return (
+    <div
+      style={{
+        height: 420,
+        borderRadius: 20,
+        overflow: 'hidden',
+        background: '#fff',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        padding: '28px 24px 24px',
+        boxSizing: 'border-box',
+      }}
+      onClick={onClick}
+    >
+      <span style={{
+        fontSize: 12, fontWeight: 700, color: PRIMARY,
+        background: PRIMARY_BG, borderRadius: 8,
+        padding: '4px 10px', letterSpacing: 0.3,
+      }}>
+        받은 좋아요
+      </span>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10 }}>
+        <Heart size={44} color="#FF6B9D" strokeWidth={1.5} />
+        <p style={{ fontSize: 22, fontWeight: 900, color: '#111', lineHeight: 1.4, margin: '8px 0 0' }}>
+          나에게 좋아요를<br />보낸 상대가 있어요
+        </p>
+        <p style={{ fontSize: 14, color: '#FF6B9D', fontWeight: 600, margin: 0 }}>
+          {count}명이 기다리고 있어요
+        </p>
+      </div>
+      <button
+        style={{
+          width: '100%', padding: '14px 0', borderRadius: 12,
+          background: '#FF6B9D', color: '#fff',
+          border: 'none', cursor: 'pointer',
+          fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}
+      >
+        확인하기
+        <ChevronRight size={16} color="#fff" strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+}
+
+// ── 카드: 받은 좋아요 티저 (시간표 미등록 / 랭크탭용) ──
+function ReceivedLikesTeaserCard({ count, onClick }) {
+  return (
+    <div
+      style={{
+        background: '#fff', borderRadius: 20,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        padding: '20px 24px',
+        display: 'flex', alignItems: 'center', gap: 14,
+        cursor: 'pointer',
+      }}
+      onClick={onClick}
+    >
+      <div style={{
+        width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+        background: '#FFF0F5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Heart size={24} color="#FF6B9D" strokeWidth={1.8} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 15, fontWeight: 800, color: '#111', margin: 0 }}>나에게 좋아요를 보낸 상대가 있어요</p>
+        <p style={{ fontSize: 13, color: '#FF6B9D', fontWeight: 600, margin: '3px 0 0' }}>{count}명이 기다리고 있어요</p>
+      </div>
+      <ChevronRight size={18} color="#CCC" strokeWidth={2.5} />
+    </div>
+  );
+}
+
+// ── 받은 좋아요 상세 섹션 ────────────────────────────
+function ReceivedLikesSection({ likes: likeList, profileMap, onAccept, onReject }) {
+  if (!likeList || likeList.length === 0) return null;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#FF6B9D', padding: '0 20px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Heart size={18} color="#FF6B9D" fill="#FF6B9D" />
+        나를 좋아해요
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#FF6B9D' }}>
+          {likeList.length}
+        </span>
+      </p>
+      <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {likeList.map(like => {
+          const info = profileMap?.[like.senderId];
+          const age  = info?.birthDate ? calcAge(info.birthDate) : null;
+          return (
+            <div key={like.likeId} style={{
+              background: '#fff', borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.07)',
+              padding: '16px', display: 'flex', alignItems: 'center', gap: 14,
+              border: '1.5px solid #FFE0ED',
+            }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
+                background: PRIMARY_BG, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {info?.photo
+                  ? <img src={info.photo} alt={info.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; }} />
+                  : <User size={26} color={PRIMARY} strokeWidth={1.5} />
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>{info?.name || '---'}</span>
+                  {age && <span style={{ fontSize: 13, color: '#888' }}>{age}세</span>}
+                </div>
+                {info?.department && (
+                  <p style={{ fontSize: 13, color: '#666', margin: '2px 0 0' }}>
+                    {info.department}{info?.grade ? ` ${info.grade}학년` : ''}
+                  </p>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button
+                  onClick={() => onReject && onReject(like.likeId)}
+                  style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: '#F5F5F5', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >✕</button>
+                <button
+                  onClick={() => onAccept && onAccept(like.likeId)}
+                  style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: '#FF6B9D', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                ><Heart size={18} color="#fff" fill="#fff" /></button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
